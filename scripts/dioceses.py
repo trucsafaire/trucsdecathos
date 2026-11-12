@@ -74,7 +74,13 @@ def trouver_commune(cs, lieu, titre="", corps="", ville_siege=None):
         if c: return c
         if ville_siege and re.search(SIEGE, sans_accent(lieu)):
             return cs_ville(cs, ville_siege)
-        return nom(titre, False)  # « Église de X » mal écrit : le titre peut encore dire la commune
+        c = nom(titre, False)  # « Église de X » mal écrit : le titre peut encore dire la commune
+        if c: return c
+        # lieu générique (« Salle paroissiale, 27 place Jules Ferry », « Cinéma ») : le texte dit souvent la commune ;
+        # un nom propre inconnu du département (« Brioude ») reste un lieu ailleurs
+        if re.search(r"\b(salle|eglise|chapelle|cinema|rue|place|maison|abbaye|monastere|basilique|sanctuaire|centre|foyer|presbytere)\b", sans_accent(lieu)):
+            return postal(corps) or nom(corps, False)
+        return None
     if ville_siege and re.search(SIEGE, sans_accent(titre)): return cs_ville(cs, ville_siege)
     return postal(titre) or nom(titre, False) or postal(corps) or nom(corps, False)
 SIEGE = (r"^\s*\d+\s*(bis|ter)?,?\s*(rue|place|avenue|bd|boulevard|allee|quai|chemin|impasse)\b|maison diocesaine|maison du diocese|^\s*cathedrale\s*$|"
