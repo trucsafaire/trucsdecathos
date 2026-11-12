@@ -25,7 +25,6 @@ vendor/                MapLibre 4.7.1 (hébergé avec le site)
   Une case à cocher recueille l'accord exprès (donnée sensible, art. 9 RGPD) avant toute connexion.
 - **Événements** : `GET /cathos/agenda` (publiés après relecture) + `data/evenements.json`.
 - **Horaires des messes** : lien vers Messes Info (recherche par position), qui reste la référence tenue par les paroisses.
-- **Temps liturgique** : calculé dans la page (date de Pâques, Avent, Carême…), affiché en signet.
 - **Démonstration** : `#demo` à la fin de l'adresse affiche des événements fictifs, marqués « Exemple ».
 
 ## Mise en ligne
