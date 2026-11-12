@@ -38,4 +38,5 @@ jobs:
           git config user.name "Trucs de cathos (robot)"
           git config user.email "alertes@trucsafaire.fr"
           git commit -m "Agendas des diocèses et horaires des messes : relevé du $(date -u +%F)"
+          git pull --rebase origin main   # le code a pu changer pendant le relevé
           git push
