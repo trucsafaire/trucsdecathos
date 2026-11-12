@@ -1,7 +1,7 @@
 name: Agendas des diocèses
 on:
   schedule:
-    - cron: "47 3 * * *"   # chaque nuit à 3 h 47 UTC
+    - cron: "47 3 * * 1"   # une fois par semaine, le lundi à 3 h 47 UTC
   workflow_dispatch:
 concurrency:
   group: donnees

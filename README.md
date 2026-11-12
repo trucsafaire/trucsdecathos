@@ -11,7 +11,7 @@ index.html             l'appli (liste, carte, détail, favoris, compte, proposer
 admin.html             espace éditeur : valider, corriger, refuser, retirer (code éditeur de Trucs à faire)
 config.js              adresse du serveur commun (api.trucsafaire.fr)
 data/types.json        familles et pictogrammes   ← python scripts/construire_types.py
-data/evenements.json   événements des agendas diocésains   ← python scripts/dioceses.py (chaque nuit, GitHub Actions)
+data/evenements.json   événements des agendas diocésains   ← python scripts/dioceses.py (chaque lundi, GitHub Actions)
 data/communes-fr.json  communes (copie de Trucs à faire)
 marque/                logos et pictogrammes (pastilles SVG)
 scripts/pictos.py      dessin des pictogrammes (source unique)
@@ -29,7 +29,7 @@ vendor/                MapLibre 4.7.1 (hébergé avec le site)
 
 ## Agendas des diocèses
 
-`scripts/dioceses.py` lit chaque nuit les agendas publics des diocèses (bibliothèque standard Python, une page par seconde) :
+`scripts/dioceses.py` lit chaque semaine les agendas publics des diocèses (bibliothèque standard Python, une page par seconde) :
 
 | Diocèse | Site | Méthode |
 |---|---|---|
