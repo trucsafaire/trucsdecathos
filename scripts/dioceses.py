@@ -64,7 +64,7 @@ def trouver_commune(cs, lieu, titre="", corps="", ville_siege=None):
             for rx, c in cs:
                 if rx.match(n): return c
     def nom(t, court):
-        n = sans_accent(t or "").replace("’", "'")
+        n = re.sub(r"\bste?\b\.?", lambda m: "sainte" if m.group(0).startswith("ste") else "saint", sans_accent(t or "").replace("’", "'"))
         for rx, c in cs:
             x = sans_accent(c[0])
             if x in MOTS_COMMUNS or (not court and len(x) < 5): continue
