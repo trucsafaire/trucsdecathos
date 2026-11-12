@@ -175,7 +175,7 @@ def date_fr(s, annee_ref=None):
 
 def evt(src, ident, titre, debut, fin, h, hf, lieu, commune, desc, url, org, typ):
     return {"id": f"dio-{src}-{ident}", "t": titre[:90], "type": typ, "s": debut.isoformat(), "e": fin.isoformat() if fin and fin != debut else "",
-            "h": h, "hf": hf, "lieu": lieu[:90], "w": commune[0], "z": commune[1], "lat": commune[2], "lon": commune[3],
+            "h": h, "hf": hf if hf != h else "", "lieu": lieu[:90], "w": commune[0], "z": commune[1], "lat": commune[2], "lon": commune[3],
             "d": desc[:600], "u": url, "org": org, "src": src}
 
 # ---------- Adaptateurs ----------

@@ -61,7 +61,7 @@ select.sel{min-height:48px;border-radius:14px;border:1px solid var(--trait);back
 main{padding:18px 0 40px}
 .jour{font:700 13px/1 "DM Sans";letter-spacing:.07em;text-transform:uppercase;color:var(--or-t);margin:22px 0 10px}
 .grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:22px 16px}
-.carte{display:grid;gap:8px;text-align:left;background:none;border:0;padding:0;min-width:0;cursor:pointer;color:inherit}
+.carte{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;text-align:left;background:none;border:0;padding:0;min-width:0;cursor:pointer;color:inherit}
 .th{position:relative;display:grid;place-items:center;aspect-ratio:3/2;border-radius:20px;background:color-mix(in srgb,var(--pc) 16%,var(--surface));color:var(--pc)}
 .th .gl{width:34%;height:auto}
 .th .fav{position:absolute;right:8px;top:8px}
@@ -214,8 +214,9 @@ function fmtISO(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).pad
 const hh = h => h ? h.replace(":", " h ").replace(/ h 00$/, " h") : "";
 function quand(e) {
   let s = jourLong(e.s); s = s[0].toUpperCase() + s.slice(1);
-  if (e.e && e.e !== e.s) s = "Du " + jourLong(e.s) + " au " + jourLong(e.e);
-  if (e.h) s += " · " + hh(e.h) + (e.hf ? " – " + hh(e.hf) : "");
+  const plein = x => { const d = dt(x); return JOURS[d.getDay()] + " " + d.getDate() + " " + MOIS[d.getMonth()]; };
+  if (e.e && e.e !== e.s) s = (e.e === auj() ? "Jusqu’à ce soir, depuis le " : "Du ") + plein(e.s) + (e.e === auj() ? "" : " au " + plein(e.e));
+  if (e.h) s += " · " + hh(e.h) + (e.hf && e.hf !== e.h ? " – " + hh(e.hf) : "");
   return s;
 }
 function km(a, b) { const R = 6371, r = x => x * Math.PI / 180, dl = r(b.lat - a.lat), dn = r(b.lon - a.lon); const h = Math.sin(dl / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(dn / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); }
