@@ -1,4 +1,4 @@
-name: Agendas des diocèses
+name: Agendas des diocèses et horaires des messes
 on:
   schedule:
     - cron: "47 3 * * 1"   # une fois par semaine, le lundi à 3 h 47 UTC
@@ -11,21 +11,31 @@ permissions:
 jobs:
   recuperer:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Lire les agendas (Moulins, Nevers, Autun)
-        run: python scripts/dioceses.py | tee journal.txt
+      - name: Pages déjà lues (cache d'une semaine à l'autre, hors dépôt)
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: dioceses-${{ github.run_id }}
+          restore-keys: dioceses-
+      - name: Agendas de tous les diocèses de France
+        run: python -u scripts/dioceses.py | tee journal-dioceses.txt
       - name: Contrôle du fichier produit
         run: python -c "import json;d=json.load(open('data/evenements.json'));assert isinstance(d,list);print(len(d),'événements')"
+      - name: Horaires des messes (Messes Info)
+        env:
+          MESSESINFO_KEY: ${{ secrets.MESSESINFO_KEY }}   # clé secrète, jamais dans le dépôt
+        run: python -u scripts/messesinfo.py | tee journal-messes.txt
       - name: Enregistrer s'il y a du nouveau
         run: |
-          if git diff --quiet data/evenements.json; then echo "Rien de nouveau"; exit 0; fi
+          git add data/evenements.json data/dioceses-bilan.json data/messes 2>/dev/null || true
+          if git diff --cached --quiet; then echo "Rien de nouveau"; exit 0; fi
           git config user.name "Trucs de cathos (robot)"
           git config user.email "alertes@trucsafaire.fr"
-          git add data/evenements.json
-          git commit -m "Agendas des diocèses : mise à jour du $(date -u +%F)"
+          git commit -m "Agendas des diocèses et horaires des messes : relevé du $(date -u +%F)"
           git push

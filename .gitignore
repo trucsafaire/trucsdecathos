@@ -1,0 +1,3 @@
+.cache/
+journal-*.txt
+__pycache__/

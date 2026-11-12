@@ -48,6 +48,14 @@ select.sel{min-height:48px;border-radius:14px;border:1px solid var(--trait);back
 .messes{display:flex;align-items:center;gap:12px;margin:16px 0 0;padding:12px 14px;border-radius:var(--rl);background:var(--ciel)}
 .messes p{margin:0;flex:1;font-size:15px}
 .messes b{font-family:Outfit}
+.messes .mi{flex:1;min-width:0}
+.messes ul{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:2px}
+.messes li button{all:unset;cursor:pointer;display:flex;gap:8px;align-items:baseline;font-size:14px;padding:3px 0;width:100%}
+.messes li button:hover .ml,.messes li button:focus-visible .ml{text-decoration:underline}
+.messes .mh{font-family:Outfit;font-weight:600;min-width:92px;color:var(--bleu)}
+.messes .ml{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.messes .mk2{color:var(--gris,#5b6472);font-size:13px}
+.messes small{display:block;margin-top:4px;font-size:12px;color:var(--gris,#5b6472)}
 /* Filtres */
 .filtres{position:sticky;top:64px;z-index:15;background:var(--fond);padding:12px 0 10px;border-bottom:1px solid var(--trait)}
 .rang{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px}
@@ -140,7 +148,7 @@ footer a{color:var(--douce)}
     <select class="sel" id="rayon"><option value="10">10 km</option><option value="20" selected>20 km</option><option value="40">40 km</option><option value="80">80 km</option></select>
     <button class="btn" type="button" id="b-moi">Autour de moi</button>
   </form>
-  <div class="messes" id="messes" hidden><svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" style="color:var(--bleu);flex:none"><path d="M7 9h10c0 3.3-2.2 5.5-5 5.5S7 12.3 7 9Z M12 14.5V19 M8.5 19.5h7 M12 3a2 2 0 1 1 0 4a2 2 0 1 1 0-4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><p>Les <b>horaires des messes</b> à <span id="m-ville"></span> sont tenus à jour par les paroisses sur Messes Info.</p><a class="btn" id="m-lien" target="_blank" rel="noopener">Voir les horaires</a></div>
+  <div class="messes" id="messes" hidden><svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" style="color:var(--bleu);flex:none"><path d="M7 9h10c0 3.3-2.2 5.5-5 5.5S7 12.3 7 9Z M12 14.5V19 M8.5 19.5h7 M12 3a2 2 0 1 1 0 4a2 2 0 1 1 0-4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="mi"><p id="m-txt">Les <b>horaires des messes</b> à <span id="m-ville"></span> sont tenus à jour par les paroisses sur Messes Info.</p><ul id="m-liste" hidden></ul><small id="m-src" hidden>Horaires fournis par les paroisses sur Messes Info · relevés chaque semaine</small></div><a class="btn" id="m-lien" target="_blank" rel="noopener">Voir les horaires</a></div>
 </div>
 
 <div class="filtres"><div class="wrap">
@@ -184,7 +192,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const ls = { get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }, set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (_) {} } };
 const SQ = "M32 0C52.5 0 64 4.6 64 32S52.5 64 32 64 0 59.4 0 32 11.5 0 32 0Z";
-let T = { familles: [], types: {} }, FAM = {}, EV = [], COMMUNES = null, MAP = null, MK = [];
+let T = { familles: [], types: {} }, FAM = {}, EV = [], MS = [], MDEP = {}, COMMUNES = null, MAP = null, MK = [];
 const st = { fam: new Set(), q: "tout", vue: "liste", lieu: null, rayon: 20, demo: false };
 try { const l = JSON.parse(ls.get("tdc-lieu") || "null"); if (l && isFinite(l.lat)) st.lieu = l; st.rayon = +ls.get("tdc-rayon") || 20; } catch (_) {}
 
@@ -274,7 +282,7 @@ let dlT; async function suggerer(val) {
 $("ou").addEventListener("input", e => suggerer(e.target.value));
 $("ou").addEventListener("change", async e => { await communes(); const c = trouverCommune(e.target.value); if (c) choisirLieu({ nom: c[0], dep: c[1], lat: c[2], lon: c[3] }); });
 $("f-ou").addEventListener("submit", async e => { e.preventDefault(); await communes(); const c = trouverCommune($("ou").value); if (c) choisirLieu({ nom: c[0], dep: c[1], lat: c[2], lon: c[3] }); else toast("Commune introuvable : choisissez-la dans la liste."); });
-$("rayon").addEventListener("change", e => { st.rayon = +e.target.value; ls.set("tdc-rayon", st.rayon); rendre(); });
+$("rayon").addEventListener("change", e => { st.rayon = +e.target.value; ls.set("tdc-rayon", st.rayon); rendre(); chargerMesses().then(() => { majMesses(); if (st.fam.has("messes")) rendre(); }); });
 $("b-moi").onclick = () => {
   if (!navigator.geolocation) return toast("Votre appareil ne donne pas sa position.");
   navigator.geolocation.getCurrentPosition(p => choisirLieu({ nom: "Autour de moi", lat: +p.coords.latitude.toFixed(3), lon: +p.coords.longitude.toFixed(3) }), () => toast("Position refusée : indiquez plutôt votre commune."), { timeout: 10000, maximumAge: 600000 });
@@ -283,13 +291,40 @@ function choisirLieu(l) {
   if (st.lieu && st.lieu.nom === l.nom && st.lieu.dep === l.dep && st.lieu.lat === l.lat) return;  // même commune : ne pas redessiner (le tap en cours serait perdu)
   st.lieu = l; ls.set("tdc-lieu", JSON.stringify(l)); $("ou").value = l.dep ? l.nom + " (" + l.dep + ")" : l.nom;
   majMesses(); rendre();
+  chargerMesses().then(() => { majMesses(); if (st.fam.has("messes")) rendre(); });
 }
+const court = s => { const d = dt(s), a = auj(); return s === a ? "Auj." : s === fmtISO(plus(dt(a), 1)) ? "Demain" : JOURS[d.getDay()].slice(0, 3) + ". " + d.getDate(); };
 function majMesses() {
   const l = st.lieu, b = $("messes");
   if (!l) { b.hidden = true; return; }
-  $("m-ville").textContent = l.nom;
   $("m-lien").href = "https://messes.info/horaires/" + l.lat + ":" + l.lon;  // recherche par position, gérée par Messes Info
   b.hidden = false;
+  const a = auj(), n = new Date(), maint = String(n.getHours()).padStart(2, "0") + ":" + String(n.getMinutes()).padStart(2, "0");
+  const proches = MS.filter(m => (m.s > a || (m.s === a && m.h >= maint)) && T.types[m.type] && T.types[m.type].f === "messes")
+    .map(m => (m._km = km(l, m), m)).filter(m => m._km <= Math.min(st.rayon, 15))
+    .sort((x, y) => (x.s + x.h + String(x._km.toFixed(1)).padStart(5, "0")) < (y.s + y.h + String(y._km.toFixed(1)).padStart(5, "0")) ? -1 : 1).slice(0, 5);
+  $("m-liste").hidden = $("m-src").hidden = !proches.length;
+  $("m-txt").innerHTML = proches.length ? "<b>Prochaines messes</b> près de " + esc(l.nom) : "Les <b>horaires des messes</b> à " + esc(l.nom) + " sont tenus à jour par les paroisses sur Messes Info.";
+  $("m-lien").textContent = proches.length ? "Tous les horaires" : "Voir les horaires";
+  $("m-liste").innerHTML = proches.map(m => '<li><button type="button" data-m="' + esc(m.id) + '"><span class="mh">' + esc(court(m.s) + " " + hh(m.h)) + '</span><span class="ml">' + esc(m.lieu + (m.w && !norm(m.lieu).includes(norm(m.w)) ? ", " + m.w : "")) + '</span><span class="mk2">' + (m._km < 10 ? m._km.toFixed(1).replace(".", ",") : Math.round(m._km)) + " km</span></button></li>").join("");
+  $("m-liste").querySelectorAll("[data-m]").forEach(x => x.onclick = () => detail(x.dataset.m));
+}
+/* Horaires Messes Info : data/messes/<département>.json, relevés chaque semaine (clé d'API côté robot, jamais ici) */
+async function chargerMesses() {
+  const l = st.lieu; if (!l) { MS = []; return; }
+  await communes();
+  const deps = new Set(l.dep ? [l.dep] : []);
+  for (const c of COMMUNES || []) if (Math.abs(c[2] - l.lat) < 0.5 && Math.abs(c[3] - l.lon) < 0.7 && km(l, { lat: c[2], lon: c[3] }) <= st.rayon + 2) deps.add(c[1]);
+  const lus = await Promise.all([...deps].slice(0, 6).map(d => MDEP[d] !== undefined ? MDEP[d] : (MDEP[d] = fetch("data/messes/" + d + ".json").then(r => r.ok ? r.json() : null).catch(() => null))));
+  MS = [];
+  for (const f of lus) {
+    if (!f || !f.h) continue;
+    for (const [s, h, lid, type, prec] of f.h) {
+      const L = f.l[lid]; if (!L) continue;
+      const t = T.types[type];
+      MS.push({ id: "mi-" + lid + "-" + s + "-" + h, type, s, h, t: (t ? t.n.replace(/ \(.*\)$/, "") : "Messe") + (prec ? " · " + prec : ""), lieu: L[0], w: L[1], lat: L[3], lon: L[4], org: "Horaires Messes Info", u: "https://messes.info/lieu/" + lid, m: true });
+    }
+  }
 }
 
 /* ---------- Filtres ---------- */
@@ -303,7 +338,7 @@ document.querySelectorAll("[data-v]").forEach(b => b.onclick = () => { st.vue = 
 function visibles() {
   const a = auj(), d0 = dt(a), dow = d0.getDay();
   const sam = fmtISO(plus(d0, (6 - dow + 7) % 7)), dim = fmtISO(plus(d0, dow === 0 ? 0 : 7 - dow)), sept = fmtISO(plus(d0, 7));
-  return EV.filter(e => {
+  return (st.fam.has("messes") ? EV.concat(MS) : EV).filter(e => {
     const fin = e.e || e.s; if (fin < a) return false;
     const t = T.types[e.type]; if (!t) return false;
     if (st.fam.size && !st.fam.has(t.f)) return false;
@@ -373,14 +408,14 @@ function ics(e) {
   return L.join("\r\n");
 }
 function detail(id) {
-  const e = EV.find(x => x.id === id); if (!e) return;
+  const e = EV.find(x => x.id === id) || MS.find(x => x.id === id); if (!e) return;
   const t = T.types[e.type], f = FAM[t.f], ou = [e.lieu, e.w].filter(Boolean).join(", ");
   const c = ouvrir('<div class="fh">' + pastille(e.type, 64) + '<div><div class="etq">' + esc(f.n) + " · " + esc(t.n) + '</div><h2 id="dlg-t">' + esc(e.t) + (e.demo ? '<span class="exemple">Exemple</span>' : "") + "</h2></div>" + croix + "</div>" +
     '<ul class="infos"><li>' + ico("cal") + "<span>" + esc(quand(e)) + "</span></li><li>" + ico("pin") + "<span>" + esc(ou) + "</span></li>" + (e.org ? "<li>" + ico("org") + "<span>" + esc(e.org) + "</span></li>" : "") + "</ul>" +
     (e.d ? '<p class="desc">' + esc(e.d) + "</p>" : "") +
     '<div class="actions"><button class="btn p" type="button" id="d-ics">' + ico("cal") + "Ajouter à mon agenda</button>" +
     '<button class="btn" type="button" id="d-fav" data-fav="' + esc(e.id) + '" aria-pressed="' + FAV.includes(e.id) + '">' + ico("coeur") + "Favori</button>" +
-    (e.u ? '<a class="btn" href="' + esc(e.u) + '" target="_blank" rel="noopener">' + ico("lien") + (e.src ? "Voir sur le site du diocèse" : "Site, inscription") + "</a>" : "") + "</div>" +
+    (e.u ? '<a class="btn" href="' + esc(e.u) + '" target="_blank" rel="noopener">' + ico("lien") + (e.m ? "Voir sur Messes Info" : e.src ? "Voir sur le site du diocèse" : "Site, inscription") + "</a>" : "") + "</div>" +
     '<div class="gps" aria-label="Y aller"><a href="https://www.google.com/maps/dir/?api=1&destination=' + e.lat + "," + e.lon + '" target="_blank" rel="noopener">Google Maps</a><a href="https://waze.com/ul?ll=' + e.lat + "," + e.lon + '&navigate=yes" target="_blank" rel="noopener">Waze</a><a href="https://maps.apple.com/?daddr=' + e.lat + "," + e.lon + '" target="_blank" rel="noopener">Plans</a></div>');
   c.querySelector("#d-ics").onclick = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([ics(e)], { type: "text/calendar" })); a.download = "trucs-de-cathos-" + e.id + ".ics"; document.body.appendChild(a); a.click(); a.remove(); toast("Fichier agenda prêt : ouvrez-le pour l’ajouter."); };
   c.querySelector("#d-fav").onclick = () => toggleFav(e.id);
@@ -501,6 +536,7 @@ async function charger() {
   filtresUI(); accUI(); $("rayon").value = String(st.rayon);
   if (st.lieu) { $("ou").value = st.lieu.dep ? st.lieu.nom + " (" + st.lieu.dep + ")" : st.lieu.nom; majMesses(); }
   await charger();
+  if (st.lieu) await chargerMesses().then(() => majMesses()).catch(() => {});
   const h = location.hash;
   if (CFG.demo || h === "#demo") demo(); else rendre();
   if (h.startsWith("#connexion=")) connexion(h.slice(11));

@@ -12,6 +12,8 @@ admin.html             espace éditeur : valider, corriger, refuser, retirer (co
 config.js              adresse du serveur commun (api.trucsafaire.fr)
 data/types.json        familles et pictogrammes   ← python scripts/construire_types.py
 data/evenements.json   événements des agendas diocésains   ← python scripts/dioceses.py (chaque lundi, GitHub Actions)
+data/dioceses.json     les 98 diocèses (métropole, outre-mer, Armées) : site, siège, départements
+data/messes/<dep>.json horaires des messes Messes Info      ← python scripts/messesinfo.py (chaque lundi, clé secrète)
 data/communes-fr.json  communes (copie de Trucs à faire)
 marque/                logos et pictogrammes (pastilles SVG)
 scripts/pictos.py      dessin des pictogrammes (source unique)
@@ -24,22 +26,37 @@ vendor/                MapLibre 4.7.1 (hébergé avec le site)
   Un compte Trucs à faire marche ici, et inversement. Préférences et favoris de chaque site restent séparés.
   Une case à cocher recueille l'accord exprès (donnée sensible, art. 9 RGPD) avant toute connexion.
 - **Événements** : `GET /cathos/agenda` (publiés après relecture) + `data/evenements.json`.
-- **Horaires des messes** : lien vers Messes Info (recherche par position), qui reste la référence tenue par les paroisses.
+- **Horaires des messes** : relevés chaque semaine sur Messes Info (`data/messes/<département>.json`). L'appli montre les prochaines messes
+  autour de la commune choisie, et toutes les messes et offices avec le filtre « Messes & offices ». Lien « Tous les horaires » vers Messes Info.
 - **Démonstration** : `#demo` à la fin de l'adresse affiche des événements fictifs, marqués « Exemple ».
 
 ## Agendas des diocèses
 
-`scripts/dioceses.py` lit chaque semaine les agendas publics des diocèses (bibliothèque standard Python, une page par seconde) :
+`scripts/dioceses.py` lit chaque semaine les agendas publics de **tous les diocèses** listés dans `data/dioceses.json`
+(bibliothèque standard Python ; une page à la fois et au plus une par seconde pour chaque site ; plusieurs sites en parallèle).
 
-| Diocèse | Site | Méthode |
-|---|---|---|
-| Moulins (03) | catholique-moulins.fr | plan du site des événements (Modern Events Calendar), puis chaque page |
-| Nevers (58) | nievre.catholique.fr | API WordPress du type « agenda », puis chaque page (date sans année : prochaine occurrence) |
-| Autun (71) | autun.catholique.fr | liste « événements à venir » (Event Booking), puis chaque page pour le lieu |
+- **Adaptateurs écrits à la main** (plus précis) : Moulins (Modern Events Calendar), Nevers (API WordPress « agenda »), Autun (Event Booking).
+- **Adaptateur générique** pour les autres, dans cet ordre :
+  1. API REST de *The Events Calendar* (`/wp-json/tribe/events/v1/events`) : dates, lieu, commune déjà structurés ;
+  2. sinon les plans du site consacrés aux événements (Yoast, Rank Math, WordPress), pages les plus récemment modifiées d'abord
+     (`MAX_PAGES`, 150 par défaut), puis chaque page lue par : JSON-LD schema.org/Event, thème commun des sites « catholique.fr »,
+     Modern Events Calendar, Events Manager, puis repérage générique d'un bloc « date » et d'un bloc « lieu ».
+- Une page déjà lue dont la date de modification n'a pas changé n'est pas relue (`.cache/`, conservé par `actions/cache`, hors dépôt).
 
 Un événement n'est gardé que s'il est à venir, ouvert au public (conseils, commissions, réunions internes écartés), classé dans un des 53 types
-par mots-clés, et placé dans une commune du département (« Maison du diocèse », « Cathédrale » : ville du siège). Le journal de chaque passage
-dit ce qui a été écarté et pourquoi. Une source en panne garde ses anciens événements. Ajouter un diocèse = écrire un adaptateur et l'ajouter à `SOURCES`.
+par mots-clés, et placé dans une commune des départements du diocèse (« Maison du diocèse », « Cathédrale » : ville du siège ;
+un lieu hors du diocèse, « Lourdes », « Pontorson (50) », est écarté). Le journal de chaque passage dit ce qui a été écarté et pourquoi ;
+`data/dioceses-bilan.json` donne le nombre d'événements par diocèse. Une source en panne garde ses anciens événements.
+Les sites sans agenda lisible automatiquement (pas de plan du site, agenda en image ou dans un autre outil) restent à 0 :
+un adaptateur dédié peut leur être ajouté dans `DEDIES`. `scripts/sonder.py` refait l'inventaire technique des sites.
+
+## Horaires des messes (Messes Info)
+
+`scripts/messesinfo.py` relève chaque semaine, département par département, les horaires des 15 jours à venir sur l'API v2 de Messes Info
+(Conférence des évêques de France) : paroisses du département (`/department/{n}`), puis leurs horaires (`/horaires/community:{id} …`).
+La clé d'API (« userkey ») se demande à **contact.messesinfo@cef.fr** ; elle se range dans le secret GitHub `MESSESINFO_KEY`
+(Settings → Secrets and variables → Actions) et n'apparaît jamais dans le dépôt ni dans le navigateur. Sans clé, l'étape ne fait rien
+et l'appli garde le lien vers Messes Info. Les horaires restent ceux saisis par les paroisses : la source est citée sous la liste.
 
 ## Mise en ligne
 
