@@ -59,7 +59,7 @@ def communes(deps):
     out.sort(key=lambda c: -len(c[0]))  # « Saint-Pourçain-sur-Sioule » avant « Sioule »
     return [(re.compile(r"(?<![a-z])" + re.escape(sans_accent(c[0]).replace("-", " ")).replace(r"\ ", r"[\s-]+") + r"(?![a-z])"), c) for c in out if len(c[0]) > 2]
 
-MOTS_COMMUNS = {"vers", "messe", "sens", "pouilly", "marches", "foi", "joie", "paix", "saint", "jean", "port", "lieu", "bois", "pont", "val", "mont", "ville", "rue"}
+MOTS_COMMUNS = {"vers", "cours", "centre", "salle", "eglise", "chapelle", "plan", "gare", "lac", "messe", "sens", "pouilly", "marches", "foi", "joie", "paix", "saint", "jean", "port", "lieu", "bois", "pont", "val", "mont", "ville", "rue"}
 def trouver_commune(cs, lieu, titre="", corps="", ville_siege=None):
     """Commune du département : d'abord dans le lieu (« 71110 Semur-en-Brionnais », « Église de Saulcet »).
     Un lieu renseigné mais hors du département (« Brioude ») = événement écarté : on ne cherche pas ailleurs.
