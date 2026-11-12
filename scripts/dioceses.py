@@ -466,11 +466,11 @@ def cache_ecrire(partiel=False):
 CHEMINS_AGENDA = ("/agenda", "/agenda/", "/agenda/tout-lagenda", "/evenements/", "/evenements", "/events/", "/agenda-du-diocese/", "/agendas/", "/agenda.html")
 def _liens_agenda(base, d):
     """Dernier recours : page « agenda » du site, puis les liens vers les pages d'événements qu'elle contient."""
-    hote = urllib.parse.urlsplit(base).netloc
     chemins = ([d["agenda"]] if d.get("agenda") else []) + [base + c for c in CHEMINS_AGENDA]
     for a in chemins:
         try: p, fin = lire(a, final=True)
         except Exception: continue
+        hote = urllib.parse.urlsplit(fin).netloc  # l'agenda peut être sur un autre site (agenda.catholique-savoie.fr)
         racine = urllib.parse.urlsplit(fin).path.rstrip("/")
         liens = []
         for h in re.findall(r'href="([^"#]+)"', p):
@@ -478,7 +478,7 @@ def _liens_agenda(base, d):
             if sp.netloc.replace("www.", "") != hote.replace("www.", "") or sp.query and "ical" in sp.query: continue
             chemin = sp.path.rstrip("/")
             if re.search(r"\.(pdf|jpe?g|png|ics|xml)$|/(page|feed|categor\w*|tag|type|lieu|auteur|author)/|[?&](page|paged)=", u, re.I): continue
-            if (racine and chemin.startswith(racine + "/") and chemin.count("/") > racine.count("/")) or re.search(r"/(evenements?|events?|agenda)/[^/]*[a-z][^/]*-[^/]+", chemin):
+            if (racine and chemin.startswith(racine + "/") and chemin.count("/") > racine.count("/")) or re.search(r"/(evenements?|events?|agenda|dates)/(\d{4}/)?[^/]*[a-z][^/]*-[^/]+|share-AGENDA\w+\.html$", chemin):
                 if u not in liens: liens.append(u.split("#")[0])
         if len(liens) >= 2: return liens
     return []
