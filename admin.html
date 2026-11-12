@@ -1,0 +1,21 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Éditeur · Trucs de cathos</title><link rel="icon" href="marque/icone.svg"><link rel="stylesheet" href="fonts/fonts.css">
+<style>body{margin:0;background:#FBF8F1;color:#141A33;font:400 15px/1.5 "DM Sans",system-ui,sans-serif}main{max-width:900px;margin:0 auto;padding:24px 16px 64px}h1,h2{font-family:Outfit,sans-serif;letter-spacing:-.02em}
+.in{min-height:44px;border-radius:12px;border:1px solid #8C93AD;padding:8px 12px;font:inherit;width:100%;background:#fff;box-sizing:border-box}.b{min-height:44px;padding:0 16px;border-radius:12px;border:1px solid #8C93AD;background:#fff;font:700 15px "DM Sans";cursor:pointer}.b.p{background:#2F6DB5;border-color:#2F6DB5;color:#fff}.b.x{color:#B3322E}
+.it{background:#fff;border:1px solid #DCE0EC;border-radius:18px;padding:16px;margin:12px 0}.g{display:grid;grid-template-columns:1fr 1fr;gap:8px}.g label{font-weight:700;font-size:13px;display:flex;flex-direction:column;gap:4px}.g .w{grid-column:1/-1}.act{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.m{color:#4D5470;font-size:13px}</style></head>
+<body><main><h1>Espace éditeur · Trucs de cathos</h1>
+<form id="f" style="display:flex;gap:8px"><input class="in" id="code" type="password" placeholder="Code éditeur" autocomplete="current-password"><button class="b p">Ouvrir</button></form>
+<p class="m" id="etat"></p><section id="l"></section></main>
+<script src="config.js"></script>
+<script>
+const API=(window.TDC_CONFIG.apiUrl||"").replace(/\/$/,""),$=id=>document.getElementById(id),esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let CODE="",TYPES={};fetch("data/types.json").then(r=>r.json()).then(t=>TYPES=t.types).catch(()=>{});
+const appel=async(p,b)=>{const r=await fetch(API+p,{method:b?"POST":"GET",headers:{Authorization:"Bearer "+CODE,"Content-Type":"application/json"},body:b?JSON.stringify(b):undefined});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.erreur||r.status);return j};
+const CH=[["t","Titre"],["type","Type (clé)"],["s","Date"],["e","Fin"],["h","Heure"],["hf","Heure de fin"],["lieu","Lieu"],["w","Commune"],["org","Organisateur"],["u","Lien"],["d","Description"]];
+async function charger(){$("etat").textContent="Chargement…";try{const j=await appel("/admin/cathos");$("etat").textContent=j.propositions.length+" proposition(s) en attente · "+j.publies.length+" événement(s) publié(s)";
+$("l").innerHTML="<h2>À valider</h2>"+(j.propositions.map(p=>'<div class="it" data-id="'+esc(p.id)+'"><div class="m">'+esc((TYPES[p.type]||{}).n||p.type)+" · reçu le "+esc((p.envoye||"").slice(0,10))+'</div><div class="g">'+CH.map(([k,n])=>'<label class="'+(k==="d"||k==="t"?"w":"")+'">'+n+(k==="d"?'<textarea class="in" data-k="d">'+esc(p.d)+"</textarea>":'<input class="in" data-k="'+k+'" value="'+esc(p[k])+'">')+"</label>").join("")+'</div><div class="act"><button class="b p" data-a="publier">Publier</button><button class="b x" data-a="refuser">Refuser</button></div></div>').join("")||'<p class="m">Rien à valider.</p>')+
+"<h2>Publiés</h2>"+(j.publies.map(e=>'<div class="it" data-id="'+esc(e.id)+'"><b>'+esc(e.t)+'</b><div class="m">'+esc(e.s+" "+(e.h||"")+" · "+e.w)+'</div><div class="act"><button class="b x" data-a="retirer">Retirer</button></div></div>').join("")||'<p class="m">Aucun.</p>');
+document.querySelectorAll("[data-a]").forEach(b=>b.onclick=async()=>{const it=b.closest(".it"),corps={id:it.dataset.id};if(b.dataset.a==="publier")it.querySelectorAll("[data-k]").forEach(i=>corps[i.dataset.k]=i.value.trim());
+{try{await appel("/admin/cathos/"+b.dataset.a,corps);charger()}catch(x){$("etat").textContent="Erreur : "+x.message}}})}
+catch(x){$("etat").textContent=x.message==="non_autorise"?"Code refusé.":"Serveur injoignable ("+x.message+")."}}
+$("f").onsubmit=e=>{e.preventDefault();CODE=$("code").value.trim();charger()};
+</script></body></html>

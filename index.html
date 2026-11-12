@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Trucs de cathos · Messes, veillées et pèlerinages près de chez vous</title>
+<meta name="description" content="Messes, adoration, louange, pèlerinages, conférences, soirées jeunes : les événements catholiques près de chez vous, sur liste et sur carte.">
+<meta name="theme-color" content="#2F6DB5">
+<link rel="icon" href="marque/icone.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="vendor/maplibre-gl-4.7.1/maplibre-gl.css">
+<style>
+:root{--bleu:#2F6DB5;--bleu-f:#1F4F8A;--ciel:#DCE8F6;--or:#E8BE55;--or-t:#8A6514;--fond:#FBF8F1;--surface:#FFFFFF;--encre:#141A33;--douce:#4D5470;--trait:#DCE0EC;--ctrl:#8C93AD;--alerte:#B3322E;
+  --ombre:0 1px 2px rgba(20,26,51,.06),0 8px 24px -12px rgba(20,26,51,.18);--r:14px;--rl:22px;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bleu:#7FA9E0;--bleu-f:#A9C6EC;--ciel:#1A2A44;--or-t:#E8BE55;--fond:#0F1629;--surface:#172036;--encre:#EEF0F8;--douce:#A9AECB;--trait:#2A3052;--ctrl:#5F678C;--alerte:#F07A72;--ombre:0 1px 2px rgba(0,0,0,.4);color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--fond);color:var(--encre);font:400 16px/1.5 "DM Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom)}
+h1,h2,h3{font-family:Outfit,system-ui,sans-serif;letter-spacing:-.02em;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--bleu)}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+/* En-tête */
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--fond) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--trait);padding-top:env(safe-area-inset-top)}
+.top .wrap{display:flex;align-items:center;gap:12px;min-height:64px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--encre);font:700 21px/1 Outfit;letter-spacing:-.02em;white-space:nowrap}
+.logo img{width:36px;height:36px}
+.sig{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;font:700 12.5px/1 "DM Sans";white-space:nowrap}
+.sp{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:var(--r);border:1px solid var(--ctrl);background:var(--surface);color:var(--encre);font-weight:700;cursor:pointer;text-decoration:none}
+.btn.p{background:var(--bleu);border-color:var(--bleu);color:#fff}
+@media (prefers-color-scheme:dark){.btn.p{color:#0F1629}}
+.btn.p:hover{background:var(--bleu-f);border-color:var(--bleu-f)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn:focus-visible,.chip:focus-visible,.carte:focus-visible{outline:3px solid var(--bleu);outline-offset:2px}
+.av{width:28px;height:28px;border-radius:50%;background:var(--bleu);color:#fff;display:grid;place-items:center;font:700 14px Outfit}
+/* Recherche */
+.hero{padding-top:28px;padding-bottom:8px}
+.hero h1{font-size:clamp(30px,5.4vw,46px);line-height:1.04}
+.hero p{color:var(--douce);margin:8px 0 18px;max-width:640px}
+.cherche{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+.champ{flex:1 1 260px;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--ctrl);border-radius:var(--r);padding:0 12px;min-height:48px}
+.champ input{border:0;background:transparent;outline:0;flex:1;min-width:0;min-height:46px}
+.champ:focus-within{outline:3px solid var(--bleu);outline-offset:1px}
+select.sel{min-height:48px;border-radius:var(--r);border:1px solid var(--ctrl);background:var(--surface);padding:0 12px}
+.messes{display:flex;align-items:center;gap:12px;margin:16px 0 0;padding:12px 14px;border-radius:var(--rl);background:var(--ciel)}
+.messes p{margin:0;flex:1;font-size:15px}
+.messes b{font-family:Outfit}
+/* Filtres */
+.filtres{position:sticky;top:64px;z-index:15;background:var(--fond);padding:12px 0 10px;border-bottom:1px solid var(--trait)}
+.rang{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px}
+.rang::-webkit-scrollbar{display:none}
+.chip{flex:none;display:inline-flex;align-items:center;gap:7px;min-height:42px;padding:0 14px;border-radius:999px;border:1px solid var(--ctrl);background:var(--surface);color:var(--encre);font-weight:500;font-size:15px;cursor:pointer;white-space:nowrap}
+.chip[aria-pressed=true]{background:var(--encre);border-color:var(--encre);color:var(--fond)}
+.chip .pt{width:10px;height:10px;border-radius:3px}
+.rang+.rang{margin-top:8px}
+.vues{display:flex;gap:4px;margin-left:auto;flex:none}
+/* Contenu */
+main{padding:18px 0 40px}
+.jour{font:700 13px/1 "DM Sans";letter-spacing:.07em;text-transform:uppercase;color:var(--or-t);margin:22px 0 10px}
+.grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.carte{display:flex;gap:14px;align-items:flex-start;background:var(--surface);border:1px solid var(--trait);border-radius:var(--rl);padding:16px;box-shadow:var(--ombre);cursor:pointer;text-align:left;width:100%;color:inherit}
+.carte .pa{flex:none}
+.ct{flex:1;min-width:0}
+.etq{font:700 11.5px/16px "DM Sans";letter-spacing:.06em;text-transform:uppercase;color:var(--douce)}
+.carte h3{font:600 18px/23px Outfit;margin:2px 0 5px}
+.carte p{margin:0;font-size:14px;line-height:20px;color:var(--douce)}
+.carte .q{font-weight:700;color:var(--encre)}
+.exemple{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:var(--or);color:#141A33;font:700 11px/16px "DM Sans";vertical-align:2px}
+.fav{flex:none;width:44px;height:44px;border-radius:12px;border:0;background:transparent;color:var(--douce);display:grid;place-items:center;cursor:pointer}
+.fav[aria-pressed=true]{color:var(--bleu)}
+.fav[aria-pressed=true] path{fill:currentColor}
+.vide{text-align:center;max-width:520px;margin:40px auto;padding:32px 24px;background:var(--surface);border:1px solid var(--trait);border-radius:var(--rl)}
+.vide img{width:64px;height:64px}
+.vide h2{font-size:24px;margin:14px 0 8px}
+.vide p{color:var(--douce);margin:0 0 18px}
+.vide .btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.bandeau{display:flex;gap:10px;align-items:center;padding:10px 14px;border-radius:var(--r);background:var(--or);color:#141A33;font-weight:500;font-size:14.5px;margin-top:14px}
+#carte{height:min(70vh,640px);border-radius:var(--rl);overflow:hidden;border:1px solid var(--trait)}
+.mk{width:34px;height:34px;cursor:pointer;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
+/* Fenêtres */
+dialog{border:0;padding:0;background:transparent;max-width:none;max-height:none;width:100%;height:100%;margin:0}
+dialog::backdrop{background:rgba(15,22,41,.55)}
+.feuille{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:min(620px,100%);max-height:92vh;overflow:auto;background:var(--surface);color:var(--encre);border-radius:26px 26px 0 0;padding:22px 20px calc(24px + env(safe-area-inset-bottom))}
+@media (min-width:700px){.feuille{top:50%;bottom:auto;transform:translate(-50%,-50%);border-radius:26px}}
+.fh{display:flex;align-items:flex-start;gap:14px;margin-bottom:12px}
+.fh h2{font-size:26px;line-height:1.1;margin-top:4px}
+.fermer{margin-left:auto;flex:none;width:44px;height:44px;border-radius:50%;border:0;background:var(--fond);cursor:pointer;display:grid;place-items:center;color:var(--encre)}
+.infos{list-style:none;padding:0;margin:14px 0;display:flex;flex-direction:column;gap:10px}
+.infos li{display:flex;gap:10px;align-items:flex-start}
+.infos svg{flex:none;color:var(--bleu);margin-top:2px}
+.desc{white-space:pre-line;color:var(--encre);margin:0 0 16px}
+.actions{display:flex;flex-wrap:wrap;gap:10px}
+.gps{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.gps a{font-weight:700;font-size:14px;padding:10px 12px;border-radius:12px;background:var(--fond);text-decoration:none}
+form .f{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+form label,form legend{font-weight:700;font-size:14.5px}
+.opt{font-weight:400;color:var(--douce)}
+.in{min-height:48px;border-radius:12px;border:1px solid var(--ctrl);background:var(--surface);padding:10px 12px;width:100%}
+textarea.in{min-height:96px;resize:vertical}
+.deux{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+fieldset{border:0;padding:0;margin:0 0 14px}
+.cases{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.cases label{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border-radius:999px;border:1px solid var(--ctrl);font-weight:500;cursor:pointer}
+.cases input{accent-color:var(--bleu)}
+.err{color:var(--alerte);font-weight:500;min-height:1.2em;margin:4px 0 10px}
+.petit{font-size:13.5px;color:var(--douce)}
+.lnk{border:0;background:none;padding:0;color:var(--bleu);font-weight:700;cursor:pointer;text-decoration:underline}
+.ok{text-align:center;padding:12px 0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,140px);background:var(--encre);color:var(--fond);padding:12px 18px;border-radius:999px;font-weight:500;z-index:50;transition:transform .25s;max-width:92vw}
+.toast.v{transform:translate(-50%,0)}
+footer{border-top:1px solid var(--trait);padding:28px 0 40px;color:var(--douce);font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+footer a{color:var(--douce)}
+@media (max-width:560px){.logo span{display:none}.sig{display:none}.hero{padding-top:20px}.messes{flex-wrap:wrap}.deux{grid-template-columns:1fr}.grille{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="logo" href="./" aria-label="Trucs de cathos, accueil"><img src="marque/icone.svg" alt=""><span>Trucs de cathos</span></a>
+  <span class="sig" id="sig" hidden></span>
+  <span class="sp"></span>
+  <button class="btn ghost" type="button" id="b-prop">Proposer</button>
+  <button class="btn" type="button" id="b-cpt">Se connecter</button>
+</div></header>
+
+<div class="wrap hero">
+  <h1>Ce qui se vit près de chez vous</h1>
+  <p>Messes, adoration, louange, pèlerinages, conférences, soirées jeunes : les propositions des paroisses, des diocèses et des communautés, au même endroit.</p>
+  <form class="cherche" id="f-ou" role="search">
+    <label class="champ"><span class="sr">Commune</span><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z M12 7.5a2 2 0 1 1 0 4a2 2 0 1 1 0-4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><input id="ou" list="communes" placeholder="Votre commune : Moulins, Nevers, Paray-le-Monial…" autocomplete="address-level2"></label>
+    <datalist id="communes"></datalist>
+    <label class="sr" for="rayon">Distance</label>
+    <select class="sel" id="rayon"><option value="10">10 km</option><option value="20" selected>20 km</option><option value="40">40 km</option><option value="80">80 km</option></select>
+    <button class="btn" type="button" id="b-moi">Autour de moi</button>
+  </form>
+  <div class="messes" id="messes" hidden><svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" style="color:var(--bleu);flex:none"><path d="M7 9h10c0 3.3-2.2 5.5-5 5.5S7 12.3 7 9Z M12 14.5V19 M8.5 19.5h7 M12 3a2 2 0 1 1 0 4a2 2 0 1 1 0-4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><p>Les <b>horaires des messes</b> à <span id="m-ville"></span> sont tenus à jour par les paroisses sur Messes Info.</p><a class="btn" id="m-lien" target="_blank" rel="noopener">Voir les horaires</a></div>
+</div>
+
+<div class="filtres"><div class="wrap">
+  <div class="rang" id="r-fam" role="group" aria-label="Familles"></div>
+  <div class="rang" role="group" aria-label="Quand">
+    <button class="chip" type="button" data-q="tout" aria-pressed="true">Tout</button>
+    <button class="chip" type="button" data-q="auj" aria-pressed="false">Aujourd’hui</button>
+    <button class="chip" type="button" data-q="we" aria-pressed="false">Ce week-end</button>
+    <button class="chip" type="button" data-q="sem" aria-pressed="false">7 jours</button>
+    <button class="chip" type="button" data-q="fav" aria-pressed="false">Mes favoris</button>
+    <span class="vues" role="group" aria-label="Affichage"><button class="chip" type="button" data-v="liste" aria-pressed="true">Liste</button><button class="chip" type="button" data-v="carte" aria-pressed="false">Carte</button></span>
+  </div>
+</div></div>
+
+<main class="wrap" id="main">
+  <div id="bandeau"></div>
+  <div id="liste" aria-live="polite"></div>
+  <div id="carte" hidden></div>
+</main>
+
+<footer><div class="wrap">
+  <img src="marque/icone.svg" width="24" height="24" alt="">
+  <span>Trucs de cathos · Saryn Digital</span>
+  <a href="#" id="l-prop">Proposer un événement</a>
+  <a id="l-taf" href="https://trucsafaire.fr/">Trucs à faire</a>
+  <a href="mentions-legales.html">Mentions légales</a>
+  <a href="confidentialite.html">Confidentialité</a>
+  <span>Rien ne remplace la messe et la vie de votre paroisse.</span>
+</div></footer>
+
+<dialog id="dlg" aria-labelledby="dlg-t"><div class="feuille" id="dlg-c"></div></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="config.js"></script>
+<script src="vendor/maplibre-gl-4.7.1/maplibre-gl.js" defer></script>
+<script>
+(function () {
+"use strict";
+const CFG = window.TDC_CONFIG || {}, API = (CFG.apiUrl || "").replace(/\/$/, "");
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const ls = { get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }, set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (_) {} } };
+const SQ = "M32 0C52.5 0 64 4.6 64 32S52.5 64 32 64 0 59.4 0 32 11.5 0 32 0Z";
+let T = { familles: [], types: {} }, FAM = {}, EV = [], COMMUNES = null, MAP = null, MK = [];
+const st = { fam: new Set(), q: "tout", vue: "liste", lieu: null, rayon: 20, demo: false };
+try { const l = JSON.parse(ls.get("tdc-lieu") || "null"); if (l && isFinite(l.lat)) st.lieu = l; st.rayon = +ls.get("tdc-rayon") || 20; } catch (_) {}
+
+/* ---------- Pictogrammes ---------- */
+function pastille(type, s) {
+  const t = T.types[type] || T.types["messe-semaine"], c = (FAM[t.f] || {}).c || "#2F6DB5";
+  return '<svg class="pa" width="' + s + '" height="' + s + '" viewBox="0 0 64 64" aria-hidden="true"><path d="' + SQ + '" fill="' + c + '"/><g transform="translate(14 14) scale(1.5)" style="color:#fff">' + t.g.replace(/stroke-width="2"/g, 'stroke-width="2.1"') + "</g></svg>";
+}
+function trait(type, s) { const t = T.types[type]; return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" aria-hidden="true">' + (t ? t.g : "") + "</svg>"; }
+const ICO = {
+  cal: '<path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19V7A1.5 1.5 0 0 1 5 5.5Z M8 3v4 M16 3v4 M3.5 10h17"/>',
+  pin: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z M12 7.5a2 2 0 1 1 0 4a2 2 0 1 1 0-4Z"/>',
+  org: '<path d="M4.5 21V11l7.5-6 7.5 6v10 M10 21v-4a2 2 0 0 1 4 0v4 M3 21h18"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  coeur: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20Z"/>',
+  lien: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1 M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'
+};
+const ico = (k, s) => '<svg width="' + (s || 20) + '" height="' + (s || 20) + '" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICO[k] + "</svg>";
+
+/* ---------- Temps liturgique (calendrier romain, simplifié) ---------- */
+function paques(y) { const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451), mo = Math.floor((h + l - 7 * m + 114) / 31), da = ((h + l - 7 * m + 114) % 31) + 1; return new Date(y, mo - 1, da); }
+const plus = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+function tempsLiturgique(d) {
+  d = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const y = d.getFullYear(), P = paques(y), noel = new Date(y, 11, 25), avent = plus(noel, -((noel.getDay() || 7)) - 21);
+  const epi = new Date(y, 0, 6), bapt = plus(epi, 7 - epi.getDay() || 7), cendres = plus(P, -46), pentecote = plus(P, 49);
+  const V = ["#6B4A9E", "#fff"], R = ["#C9648E", "#fff"], B = ["#F3EBD6", "#141A33"], G = ["#2F7D57", "#fff"], Rg = ["#B3322E", "#fff"];
+  if (d >= noel || d <= bapt) return ["Temps de Noël"].concat(B);
+  if (d >= avent) return +d === +plus(avent, 14) ? ["Gaudete"].concat(R) : ["Avent"].concat(V);
+  if (+d === +pentecote) return ["Pentecôte"].concat(Rg);
+  if (d >= P && d < pentecote) return ["Temps pascal"].concat(B);
+  if (+d === +plus(P, -2)) return ["Vendredi saint"].concat(Rg);
+  if (d >= plus(P, -3) && d < P) return ["Triduum pascal"].concat(B);
+  if (+d === +plus(P, -7)) return ["Rameaux"].concat(Rg);
+  if (d >= cendres && d < P) return +d === +plus(P, -21) ? ["Laetare"].concat(R) : ["Carême"].concat(V);
+  return ["Temps ordinaire"].concat(G);
+}
+{ const [n, bg, fg] = tempsLiturgique(new Date()), s = $("sig"); s.textContent = n; s.style.background = bg; s.style.color = fg; s.title = "Temps liturgique du jour"; s.hidden = false; }
+
+/* ---------- Outils ---------- */
+const auj = () => fmtISO(new Date());
+const JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"], MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+const dt = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const jourLong = s => { const d = dt(s), a = auj(); if (s === a) return "Aujourd’hui"; if (s === fmtISO(plus(dt(a), 1))) return "Demain"; return JOURS[d.getDay()] + " " + d.getDate() + " " + MOIS[d.getMonth()]; };
+function fmtISO(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+const hh = h => h ? h.replace(":", " h ").replace(/ h 00$/, " h") : "";
+function quand(e) {
+  let s = jourLong(e.s); s = s[0].toUpperCase() + s.slice(1);
+  if (e.e && e.e !== e.s) s = "Du " + jourLong(e.s) + " au " + jourLong(e.e);
+  if (e.h) s += " · " + hh(e.h) + (e.hf ? " – " + hh(e.hf) : "");
+  return s;
+}
+function km(a, b) { const R = 6371, r = x => x * Math.PI / 180, dl = r(b.lat - a.lat), dn = r(b.lon - a.lon); const h = Math.sin(dl / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(dn / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); }
+let tt; function toast(m) { const t = $("toast"); t.textContent = m; t.classList.add("v"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("v"), 2600); }
+
+/* ---------- Comptes (compte commun avec Trucs à faire) ---------- */
+const ACC = { tok: ls.get("tdc-ses"), c: null };
+try { ACC.c = JSON.parse(ls.get("tdc-cpt") || "null"); } catch (_) {}
+let FAV = []; try { FAV = JSON.parse(ls.get("tdc-fav") || "[]").filter(x => typeof x === "string"); } catch (_) {}
+function accSave() { ls.set("tdc-ses", ACC.tok); ls.set("tdc-cpt", ACC.tok ? JSON.stringify(ACC.c) : null); ls.set("tdc-fav", JSON.stringify(FAV)); }
+async function api(chemin, corps) {
+  if (!API) throw Object.assign(new Error("hors_ligne"), { j: { erreur: "hors_ligne" } });
+  const r = await fetch(API + chemin, { method: corps ? "POST" : "GET", headers: Object.assign({ "Content-Type": "application/json" }, ACC.tok ? { Authorization: "Bearer " + ACC.tok } : {}), body: corps ? JSON.stringify(corps) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401 && ACC.tok) { ACC.tok = null; ACC.c = null; accSave(); accUI(); }
+  if (!r.ok) throw Object.assign(new Error(j.erreur || "http"), { j });
+  return j;
+}
+function accUI() {
+  const b = $("b-cpt");
+  if (ACC.c) { b.innerHTML = '<span class="av" aria-hidden="true"></span><span>Mon compte</span>'; b.firstChild.textContent = (ACC.c.email || "?")[0].toUpperCase(); }
+  else b.textContent = "Se connecter";
+}
+let favT; function favSync() { if (!ACC.tok) return; clearTimeout(favT); favT = setTimeout(() => api("/compte", { cathos: { fav: FAV } }).then(j => { ACC.c = j.compte; accSave(); }).catch(() => {}), 700); }
+function toggleFav(id) {
+  if (FAV.includes(id)) { FAV = FAV.filter(x => x !== id); toast("Retiré de vos favoris"); }
+  else { if (!ACC.c && FAV.length >= 5) { compte("fav"); return; } FAV.push(id); toast(ACC.c ? "Ajouté à vos favoris" : "Ajouté à vos favoris (" + FAV.length + "/5 sans compte)"); }
+  accSave(); favSync(); document.querySelectorAll('[data-fav="' + CSS.escape(id) + '"]').forEach(b => b.setAttribute("aria-pressed", FAV.includes(id)));
+  if (st.q === "fav") rendre();
+}
+
+/* ---------- Fenêtres ---------- */
+const DLG = $("dlg");
+function ouvrir(html) {
+  $("dlg-c").innerHTML = html; if (!DLG.open) DLG.showModal();
+  $("dlg-c").querySelectorAll("[data-fermer]").forEach(b => b.onclick = fermer);
+  return $("dlg-c");
+}
+function fermer() { DLG.close(); if (location.hash.startsWith("#e=")) history.replaceState(null, "", location.pathname + location.search); }
+DLG.addEventListener("click", e => { if (e.target === DLG) fermer(); });
+const croix = '<button class="fermer" type="button" data-fermer aria-label="Fermer">' + ico("x") + "</button>";
+
+/* ---------- Communes ---------- */
+const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[-'’]/g, " ").replace(/\s+/g, " ").trim();
+async function communes() {
+  if (COMMUNES) return COMMUNES;
+  try { COMMUNES = await (await fetch("data/communes-fr.json")).json(); } catch (_) { COMMUNES = []; }
+  return COMMUNES;
+}
+function trouverCommune(v) { const n = norm(v.replace(/\s*\(\d[\dAB]?\)\s*$/, "")), dep = (v.match(/\((\d[\dAB]?)\)\s*$/) || [])[1]; return (COMMUNES || []).find(c => norm(c[0]) === n && (!dep || c[1] === dep)) || null; }
+let dlT; async function suggerer(val) {
+  const v = norm(val); if (v.length < 2) return; await communes();
+  clearTimeout(dlT); dlT = setTimeout(() => { $("communes").innerHTML = COMMUNES.filter(c => norm(c[0]).startsWith(v)).slice(0, 12).map(c => '<option value="' + esc(c[0] + " (" + c[1] + ")") + '">').join(""); }, 120);
+}
+$("ou").addEventListener("input", e => suggerer(e.target.value));
+$("ou").addEventListener("change", async e => { await communes(); const c = trouverCommune(e.target.value); if (c) choisirLieu({ nom: c[0], dep: c[1], lat: c[2], lon: c[3] }); });
+$("f-ou").addEventListener("submit", async e => { e.preventDefault(); await communes(); const c = trouverCommune($("ou").value); if (c) choisirLieu({ nom: c[0], dep: c[1], lat: c[2], lon: c[3] }); else toast("Commune introuvable : choisissez-la dans la liste."); });
+$("rayon").addEventListener("change", e => { st.rayon = +e.target.value; ls.set("tdc-rayon", st.rayon); rendre(); });
+$("b-moi").onclick = () => {
+  if (!navigator.geolocation) return toast("Votre appareil ne donne pas sa position.");
+  navigator.geolocation.getCurrentPosition(p => choisirLieu({ nom: "Autour de moi", lat: +p.coords.latitude.toFixed(3), lon: +p.coords.longitude.toFixed(3) }), () => toast("Position refusée : indiquez plutôt votre commune."), { timeout: 10000, maximumAge: 600000 });
+};
+function choisirLieu(l) {
+  st.lieu = l; ls.set("tdc-lieu", JSON.stringify(l)); $("ou").value = l.dep ? l.nom + " (" + l.dep + ")" : l.nom;
+  majMesses(); rendre();
+}
+function majMesses() {
+  const l = st.lieu, b = $("messes");
+  if (!l) { b.hidden = true; return; }
+  $("m-ville").textContent = l.nom;
+  $("m-lien").href = "https://messes.info/horaires/" + l.lat + ":" + l.lon;  // recherche par position, gérée par Messes Info
+  b.hidden = false;
+}
+
+/* ---------- Filtres ---------- */
+function filtresUI() {
+  $("r-fam").innerHTML = T.familles.map(f => '<button class="chip" type="button" data-f="' + f.k + '" aria-pressed="' + st.fam.has(f.k) + '"><span class="pt" style="background:' + f.c + '"></span>' + esc(f.n) + "</button>").join("");
+  $("r-fam").querySelectorAll("[data-f]").forEach(b => b.onclick = () => { const k = b.dataset.f; st.fam.has(k) ? st.fam.delete(k) : st.fam.add(k); b.setAttribute("aria-pressed", st.fam.has(k)); rendre(); });
+}
+document.querySelectorAll("[data-q]").forEach(b => b.onclick = () => { st.q = b.dataset.q; document.querySelectorAll("[data-q]").forEach(x => x.setAttribute("aria-pressed", x === b)); rendre(); });
+document.querySelectorAll("[data-v]").forEach(b => b.onclick = () => { st.vue = b.dataset.v; document.querySelectorAll("[data-v]").forEach(x => x.setAttribute("aria-pressed", x === b)); rendre(); });
+
+function visibles() {
+  const a = auj(), d0 = dt(a), dow = d0.getDay();
+  const sam = fmtISO(plus(d0, (6 - dow + 7) % 7)), dim = fmtISO(plus(d0, dow === 0 ? 0 : 7 - dow)), sept = fmtISO(plus(d0, 7));
+  return EV.filter(e => {
+    const fin = e.e || e.s; if (fin < a) return false;
+    const t = T.types[e.type]; if (!t) return false;
+    if (st.fam.size && !st.fam.has(t.f)) return false;
+    if (st.q === "auj" && !(e.s <= a && fin >= a)) return false;
+    if (st.q === "we" && !(e.s <= dim && fin >= (dow === 0 ? a : sam))) return false;
+    if (st.q === "sem" && !(e.s <= sept)) return false;
+    if (st.q === "fav" && !FAV.includes(e.id)) return false;
+    if (st.lieu && st.q !== "fav") { e._km = km(st.lieu, e); if (e._km > st.rayon) return false; } else e._km = st.lieu ? km(st.lieu, e) : null;
+    return true;
+  }).sort((x, y) => (x.s < a ? a : x.s) + (x.h || "99") < (y.s < a ? a : y.s) + (y.h || "99") ? -1 : 1);
+}
+
+/* ---------- Affichage ---------- */
+function carteHTML(e) {
+  const t = T.types[e.type], f = FAM[t.f], dist = e._km != null ? " · " + (e._km < 10 ? e._km.toFixed(1).replace(".", ",") : Math.round(e._km)) + " km" : "";
+  return '<div class="carte" role="button" tabindex="0" data-id="' + esc(e.id) + '">' + pastille(e.type, 48) +
+    '<div class="ct"><div class="etq">' + esc(t.n) + "</div><h3>" + esc(e.t) + (e.demo ? '<span class="exemple">Exemple</span>' : "") + "</h3>" +
+    '<p class="q">' + esc(quand(e)) + "</p><p>" + esc([e.lieu, e.w].filter(Boolean).join(", ")) + dist + "</p>" + (e.org ? "<p>" + esc(e.org) + "</p>" : "") + "</div>" +
+    '<button class="fav" type="button" data-fav="' + esc(e.id) + '" aria-pressed="' + FAV.includes(e.id) + '" aria-label="Favori">' + ico("coeur", 22) + "</button></div>";
+}
+function rendre() {
+  const L = $("liste"), C = $("carte"), ev = visibles();
+  $("bandeau").innerHTML = st.demo ? '<div class="bandeau">' + ico("cal") + "<span>Démonstration : ces événements sont des exemples, pas de vrais rendez-vous.</span></div>" : "";
+  L.hidden = st.vue !== "liste"; C.hidden = st.vue !== "carte";
+  if (!ev.length) {
+    L.hidden = false; C.hidden = true;
+    const ici = st.lieu ? " à moins de " + st.rayon + " km de " + esc(st.lieu.nom) : "";
+    L.innerHTML = '<div class="vide"><img src="marque/icone.svg" alt=""><h2>' + (st.q === "fav" ? "Pas encore de favoris" : "Rien pour l’instant" + ici) + "</h2><p>" +
+      (st.q === "fav" ? "Touchez le cœur d’un événement pour le garder ici." : EV.length ? "Élargissez la distance ou retirez un filtre." : "Les agendas des diocèses et des paroisses arrivent bientôt. Vous connaissez une veillée, un pèlerinage, une conférence ? Proposez-le : chaque proposition est relue avant d’être publiée.") +
+      '</p><div class="btns"><button class="btn p" type="button" data-act="prop">Proposer un événement</button>' + (!EV.length && !st.demo ? '<button class="btn" type="button" data-act="demo">Voir une démonstration</button>' : "") + "</div></div>";
+    L.querySelectorAll("[data-act=prop]").forEach(b => b.onclick = () => proposer());
+    L.querySelectorAll("[data-act=demo]").forEach(b => b.onclick = demo);
+    return;
+  }
+  if (st.vue === "liste") {
+    let html = "", jour = "", a = auj();
+    for (const e of ev) { const j = e.s < a ? a : e.s; if (j !== jour) { if (jour) html += "</div>"; jour = j; html += '<h2 class="jour">' + esc(jourLong(j)) + '</h2><div class="grille">'; } html += carteHTML(e); }
+    L.innerHTML = html + "</div>";
+    L.querySelectorAll(".carte").forEach(c => { const o = () => detail(c.dataset.id); c.onclick = o; c.onkeydown = k => { if (k.key === "Enter" || k.key === " ") { k.preventDefault(); o(); } }; });
+    L.querySelectorAll("[data-fav]").forEach(b => b.onclick = x => { x.stopPropagation(); toggleFav(b.dataset.fav); });
+  } else carte(ev);
+}
+function carte(ev) {
+  if (!window.maplibregl) { setTimeout(() => carte(ev), 200); return; }
+  if (!MAP) {
+    MAP = new maplibregl.Map({ container: "carte", style: "https://data.geopf.fr/annexes/ressources/vectorTiles/styles/PLAN.IGN/standard.json", center: [2.6, 46.6], zoom: 5, attributionControl: { compact: true } });
+    MAP.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+  }
+  MK.forEach(m => m.remove()); MK = [];
+  const b = new maplibregl.LngLatBounds();
+  for (const e of ev) {
+    const el = document.createElement("button"); el.type = "button"; el.className = "mk"; el.setAttribute("aria-label", e.t); el.style.cssText = "border:0;background:none;padding:0";
+    el.innerHTML = pastille(e.type, 34); el.onclick = () => detail(e.id);
+    MK.push(new maplibregl.Marker({ element: el }).setLngLat([e.lon, e.lat]).addTo(MAP)); b.extend([e.lon, e.lat]);
+  }
+  setTimeout(() => { MAP.resize(); if (ev.length) MAP.fitBounds(b, { padding: 60, maxZoom: 13, duration: 0 }); }, 30);
+}
+
+/* ---------- Détail d'un événement ---------- */
+function ics(e) {
+  const d = s => s.replace(/-/g, ""), t = h => h.replace(":", "") + "00", L = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Trucs de cathos//FR", "BEGIN:VEVENT", "UID:" + e.id + "@trucsdecathos.fr", "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z"];
+  if (e.h) { L.push("DTSTART:" + d(e.s) + "T" + t(e.h)); L.push("DTEND:" + d(e.e || e.s) + "T" + t(e.hf || String(Math.min(23, +e.h.slice(0, 2) + 1)).padStart(2, "0") + e.h.slice(2))); }
+  else { L.push("DTSTART;VALUE=DATE:" + d(e.s)); L.push("DTEND;VALUE=DATE:" + fmtISO(plus(dt(e.e || e.s), 1)).replace(/-/g, "")); }
+  const x = s => String(s || "").replace(/([,;\\])/g, "\\$1").replace(/\n/g, "\\n");
+  L.push("SUMMARY:" + x(e.t), "LOCATION:" + x([e.lieu, e.w].filter(Boolean).join(", ")), "DESCRIPTION:" + x((e.d || "") + (e.u ? "\n" + e.u : "")), "BEGIN:VALARM", "TRIGGER:-PT1H", "ACTION:DISPLAY", "DESCRIPTION:" + x(e.t), "END:VALARM", "END:VEVENT", "END:VCALENDAR");
+  return L.join("\r\n");
+}
+function detail(id) {
+  const e = EV.find(x => x.id === id); if (!e) return;
+  const t = T.types[e.type], f = FAM[t.f], ou = [e.lieu, e.w].filter(Boolean).join(", ");
+  const c = ouvrir('<div class="fh">' + pastille(e.type, 64) + '<div><div class="etq">' + esc(f.n) + " · " + esc(t.n) + '</div><h2 id="dlg-t">' + esc(e.t) + (e.demo ? '<span class="exemple">Exemple</span>' : "") + "</h2></div>" + croix + "</div>" +
+    '<ul class="infos"><li>' + ico("cal") + "<span>" + esc(quand(e)) + "</span></li><li>" + ico("pin") + "<span>" + esc(ou) + "</span></li>" + (e.org ? "<li>" + ico("org") + "<span>" + esc(e.org) + "</span></li>" : "") + "</ul>" +
+    (e.d ? '<p class="desc">' + esc(e.d) + "</p>" : "") +
+    '<div class="actions"><button class="btn p" type="button" id="d-ics">' + ico("cal") + "Ajouter à mon agenda</button>" +
+    '<button class="btn" type="button" id="d-fav" data-fav="' + esc(e.id) + '" aria-pressed="' + FAV.includes(e.id) + '">' + ico("coeur") + "Favori</button>" +
+    (e.u ? '<a class="btn" href="' + esc(e.u) + '" target="_blank" rel="noopener">' + ico("lien") + "Site, inscription</a>" : "") + "</div>" +
+    '<div class="gps" aria-label="Y aller"><a href="https://www.google.com/maps/dir/?api=1&destination=' + e.lat + "," + e.lon + '" target="_blank" rel="noopener">Google Maps</a><a href="https://waze.com/ul?ll=' + e.lat + "," + e.lon + '&navigate=yes" target="_blank" rel="noopener">Waze</a><a href="https://maps.apple.com/?daddr=' + e.lat + "," + e.lon + '" target="_blank" rel="noopener">Plans</a></div>');
+  c.querySelector("#d-ics").onclick = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([ics(e)], { type: "text/calendar" })); a.download = "trucs-de-cathos-" + e.id + ".ics"; document.body.appendChild(a); a.click(); a.remove(); toast("Fichier agenda prêt : ouvrez-le pour l’ajouter."); };
+  c.querySelector("#d-fav").onclick = () => toggleFav(e.id);
+  history.replaceState(null, "", "#e=" + encodeURIComponent(e.id));
+}
+
+/* ---------- Proposer un événement ---------- */
+function proposer() {
+  const opts = T.familles.map(f => '<optgroup label="' + esc(f.n) + '">' + Object.keys(T.types).filter(k => T.types[k].f === f.k).map(k => '<option value="' + k + '">' + esc(T.types[k].n) + "</option>").join("") + "</optgroup>").join("");
+  const c = ouvrir('<div class="fh"><div><div class="etq">Relu avant publication</div><h2 id="dlg-t">Proposer un événement</h2></div>' + croix + "</div>" +
+    '<form id="fp" novalidate><div class="f"><label for="p-t">Titre</label><input class="in" id="p-t" maxlength="90" required placeholder="Veillée de louange, pèlerinage des pères…"></div>' +
+    '<div class="f"><label for="p-type">Type</label><select class="in" id="p-type" required><option value="">Choisir…</option>' + opts + "</select></div>" +
+    '<div class="deux"><div class="f"><label for="p-s">Date</label><input class="in" id="p-s" type="date" required min="' + auj() + '"></div><div class="f"><label for="p-e">Fin <span class="opt">(plusieurs jours)</span></label><input class="in" id="p-e" type="date" min="' + auj() + '"></div></div>' +
+    '<div class="deux"><div class="f"><label for="p-h">Heure</label><input class="in" id="p-h" type="time"></div><div class="f"><label for="p-hf">Fin <span class="opt">(facultatif)</span></label><input class="in" id="p-hf" type="time"></div></div>' +
+    '<div class="f"><label for="p-w">Commune</label><input class="in" id="p-w" list="communes" required autocomplete="off"></div>' +
+    '<div class="f"><label for="p-l">Lieu <span class="opt">(église, salle, adresse)</span></label><input class="in" id="p-l" maxlength="90"></div>' +
+    '<div class="f"><label for="p-o">Organisé par <span class="opt">(paroisse, communauté, mouvement)</span></label><input class="in" id="p-o" maxlength="80"></div>' +
+    '<div class="f"><label for="p-d">Description <span class="opt">(facultatif)</span></label><textarea class="in" id="p-d" maxlength="600"></textarea></div>' +
+    '<div class="f"><label for="p-u">Lien <span class="opt">(site, inscription)</span></label><input class="in" id="p-u" type="url" maxlength="300" placeholder="https://"></div>' +
+    '<p class="err" id="p-err" role="alert"></p><button class="btn p" type="submit" id="p-go" style="width:100%">Envoyer la proposition</button></form>');
+  communes();
+  c.querySelector("#p-w").addEventListener("input", e => suggerer(e.target.value));
+  c.querySelector("#fp").onsubmit = async ev => {
+    ev.preventDefault(); const err = $("p-err"), v = id => $(id).value.trim(); err.textContent = "";
+    await communes(); const w = trouverCommune(v("p-w"));
+    if (v("p-t").length < 4) { err.textContent = "Donnez un titre (4 caractères au moins)."; return $("p-t").focus(); }
+    if (!v("p-type")) { err.textContent = "Choisissez le type d’événement."; return $("p-type").focus(); }
+    if (!v("p-s")) { err.textContent = "Indiquez la date."; return $("p-s").focus(); }
+    if (!w) { err.textContent = "Choisissez la commune dans la liste."; return $("p-w").focus(); }
+    const corps = { t: v("p-t"), type: v("p-type"), s: v("p-s"), e: v("p-e"), h: v("p-h"), hf: v("p-hf"), w: w[0], z: w[1], lat: w[2], lon: w[3], lieu: v("p-l"), org: v("p-o"), d: v("p-d"), u: v("p-u") };
+    const go = $("p-go"); go.disabled = true; go.textContent = "Envoi…";
+    try { await api("/cathos/propose", corps); c.innerHTML = '<div class="ok"><img src="marque/icone.svg" width="64" height="64" alt=""><h2 style="margin:14px 0 8px">Merci !</h2><p>Votre proposition sera relue puis publiée. Que Dieu bénisse cette rencontre.</p><button class="btn p" type="button" data-fermer>Fermer</button></div>'; c.querySelector("[data-fermer]").onclick = fermer; }
+    catch (x) { go.disabled = false; go.textContent = "Envoyer la proposition"; const j = x.j || {}; err.textContent = j.message || (j.erreur === "date_passee" ? "La date est passée." : j.erreur === "trop_de_demandes" ? "Trop d’envois : réessayez dans une heure." : "Envoi impossible pour l’instant. Réessayez dans un moment."); }
+  };
+}
+$("b-prop").onclick = () => proposer();
+$("l-prop").onclick = e => { e.preventDefault(); proposer(); };
+$("l-taf").href = CFG.tafUrl || "https://trucsafaire.fr/";
+
+/* ---------- Compte ---------- */
+const RAISONS = { def: ["Votre compte Trucs", "Un seul compte pour Trucs de cathos et Trucs à faire : favoris sur tous vos appareils, et bientôt des alertes près de chez vous."], fav: ["Gardez tous vos favoris", "Sans compte, 5 favoris sur cet appareil. Avec un compte gratuit : sans limite, sur tous vos appareils."], login: ["Se connecter", "Indiquez votre adresse : vous recevrez un lien de connexion, sans mot de passe. Votre compte Trucs à faire marche ici aussi."] };
+function compte(raison) {
+  if (ACC.c && raison !== "login") return monCompte();
+  const R = RAISONS[raison] || RAISONS.def, nouveau = raison !== "login";
+  const c = ouvrir('<div class="fh"><div><div class="etq">Compte gratuit</div><h2 id="dlg-t">' + esc(R[0]) + "</h2></div>" + croix + '</div><p class="petit" style="font-size:15px">' + esc(R[1]) + "</p>" +
+    '<form id="fc" novalidate><div class="f"><label for="c-e">Adresse e-mail</label><input class="in" id="c-e" type="email" autocomplete="email" inputmode="email" required placeholder="vous@exemple.fr"></div>' +
+    '<label class="petit" style="display:flex;gap:10px;align-items:flex-start;margin:4px 0 6px;font-size:14px;font-weight:400;color:var(--encre)"><input type="checkbox" id="c-ok" style="width:20px;height:20px;flex:none;accent-color:var(--bleu)"><span>J’accepte que mon compte garde trace de mon utilisation de Trucs de cathos (centres d’intérêt, favoris), uniquement pour faire fonctionner le service.</span></label>' +
+    '<p class="err" id="c-err" role="alert"></p><button class="btn p" type="submit" id="c-go" style="width:100%">Recevoir mon lien de connexion</button>' +
+    '<p class="petit">Si vous n’avez pas encore de compte, il sera créé en cliquant sur le lien. En continuant, vous acceptez les <a href="' + esc(CFG.tafUrl || "https://trucsafaire.fr/") + 'cgu.html" target="_blank" rel="noopener">conditions d’utilisation</a> du compte Trucs. Vos données ne sont jamais revendues et se suppriment en un clic : <a href="confidentialite.html" target="_blank" rel="noopener">confidentialité</a>.</p></form>');
+  setTimeout(() => $("c-e").focus(), 60);
+  c.querySelector("#fc").onsubmit = async ev => {
+    ev.preventDefault(); const email = $("c-e").value.trim().toLowerCase(), err = $("c-err");
+    if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email)) { err.textContent = "Vérifiez l’adresse e-mail."; return; }
+    if (!$("c-ok").checked) { err.textContent = "Cochez la case pour continuer : elle protège une donnée sensible."; return; }
+    const go = $("c-go"); go.disabled = true; go.textContent = "Envoi…";
+    try {
+      await api("/compte/lien", { email, cgu: true, site: "cathos", cathos: { fav: FAV, prefs: st.lieu && st.lieu.dep ? { commune: st.lieu, rayon: st.rayon } : {} } });
+      c.innerHTML = '<div class="ok"><h2 style="margin:6px 0 10px">Regardez vos e-mails</h2><p>Un lien vient de partir à <b></b>. Ouvrez-le sur cet appareil. Il est valable 30 minutes.</p><p class="petit">Rien reçu ? Regardez dans les indésirables.</p><button class="btn p" type="button" data-fermer>Compris</button></div>';
+      c.querySelector("b").textContent = email; c.querySelector("[data-fermer]").onclick = fermer;
+    } catch (x) { go.disabled = false; go.textContent = "Recevoir mon lien de connexion"; const j = x.j || {}; err.textContent = j.message || "Impossible de joindre le serveur. Réessayez dans un instant."; }
+  };
+}
+function monCompte() {
+  const cc = (ACC.c && ACC.c.cathos) || {}, p = cc.prefs || {}, sel = new Set(p.familles || []);
+  const c = ouvrir('<div class="fh"><div><div class="etq">Compte Trucs</div><h2 id="dlg-t">Mon compte</h2></div>' + croix + '</div><p class="petit" style="font-size:15px" id="mc-e"></p>' +
+    '<form id="fm"><fieldset><legend>Ce qui m’intéresse</legend><div class="cases">' + T.familles.map(f => '<label><input type="checkbox" value="' + f.k + '"' + (sel.has(f.k) ? " checked" : "") + '><span style="width:10px;height:10px;border-radius:3px;background:' + f.c + '"></span>' + esc(f.n) + "</label>").join("") + "</div></fieldset>" +
+    '<p class="petit">Vos centres d’intérêt servent à vous proposer les bons événements à l’ouverture de l’appli.</p><button class="btn p" type="submit">Enregistrer</button></form>' +
+    '<hr style="border:0;border-top:1px solid var(--trait);margin:20px 0"><p class="petit">Ce compte est le même sur <a href="' + esc(CFG.tafUrl || "https://trucsafaire.fr/") + '">Trucs à faire</a> : vos sorties et vos favoris de chaque site restent bien rangés à part.</p>' +
+    '<div class="actions"><button class="btn" type="button" id="mc-x">Me déconnecter</button><a class="btn ghost" href="' + esc(CFG.tafUrl || "https://trucsafaire.fr/") + '#compte">Exporter ou supprimer mes données</a></div>');
+  $("mc-e").textContent = "Connecté avec " + (ACC.c.email || "");
+  c.querySelector("#fm").onsubmit = async ev => { ev.preventDefault(); const familles = [...c.querySelectorAll("input:checked")].map(i => i.value);
+    try { const j = await api("/compte", { cathos: { prefs: { familles } } }); ACC.c = j.compte; accSave(); st.fam = new Set(familles); filtresUI(); rendre(); toast("C’est enregistré"); fermer(); } catch (_) { toast("Enregistrement impossible pour l’instant."); } };
+  c.querySelector("#mc-x").onclick = async () => { try { await api("/compte/deconnexion", {}); } catch (_) {} ACC.tok = null; ACC.c = null; accSave(); accUI(); fermer(); toast("À bientôt !"); };
+}
+$("b-cpt").onclick = () => ACC.c ? monCompte() : compte("login");
+async function connexion(jeton) {
+  history.replaceState(null, "", location.pathname + location.search);
+  try {
+    const j = await api("/compte/connexion", { jeton }); ACC.tok = j.session; ACC.c = j.compte;
+    FAV = [...new Set(FAV.concat((j.compte.cathos && j.compte.cathos.fav) || []))]; accSave(); favSync(); accUI();
+    const pf = (j.compte.cathos && j.compte.cathos.prefs) || {};
+    if (pf.familles && pf.familles.length) { st.fam = new Set(pf.familles); filtresUI(); }
+    if (!st.lieu && pf.commune) choisirLieu(pf.commune); else rendre();
+    toast(j.nouveau ? "Bienvenue sur Trucs de cathos !" : (j.compte.apps || []).includes("taf") ? "Connecté avec votre compte Trucs" : "Content de vous revoir !");
+  } catch (x) { toast((x.j && x.j.message) || "Ce lien a expiré. Demandez-en un nouveau."); compte("login"); }
+}
+
+/* ---------- Démonstration (événements fictifs, signalés comme tels) ---------- */
+function demo() {
+  const b = st.lieu || { lat: 46.566, lon: 3.333, nom: "Moulins" }, d = n => fmtISO(plus(new Date(), n)), o = (a, c) => ({ lat: +(b.lat + a).toFixed(4), lon: +(b.lon + c).toFixed(4) });
+  const X = [
+    ["louange", "Soirée louange et adoration", 1, "20:30", "22:00", "Église [nom]", "Paroisse [nom]", .01, .02],
+    ["messe-dominicale", "Messe du dimanche", (7 - new Date().getDay()) % 7 || 7, "10:30", "", "Église [nom]", "Paroisse [nom]", -.02, .01],
+    ["vepres", "Vêpres chantées", (7 - new Date().getDay()) % 7 || 7, "17:30", "", "Abbaye [nom]", "Communauté [nom]", .12, -.09],
+    ["pelerinage", "Pèlerinage des familles", 9, "08:00", "", "Départ : église [nom]", "Service des pèlerinages", -.1, .14],
+    ["conference", "Conférence : la foi et la science", 3, "20:00", "", "Salle paroissiale", "[Association]", .03, -.02],
+    ["soiree-jeunes", "Soirée jeunes 15-25 ans", 4, "19:30", "", "Maison paroissiale", "Aumônerie [nom]", -.01, -.03],
+    ["chapelet", "Chapelet pour la paix", 0, "18:00", "", "Chapelle [nom]", "", .02, .05],
+    ["concert", "Concert d’orgue", 6, "16:00", "", "Collégiale [nom]", "Amis de l’orgue", .05, .07],
+    ["confession", "Permanence de confessions", 2, "17:00", "18:30", "Église [nom]", "Paroisse [nom]", -.03, .02],
+    ["repas", "Repas paroissial", 11, "12:00", "", "Salle des fêtes", "Paroisse [nom]", .07, -.05]];
+  EV = X.map((x, i) => Object.assign({ id: "demo-" + i, type: x[0], t: x[1], s: d(x[2]), h: x[3], hf: x[4], lieu: x[5], w: b.nom === "Autour de moi" ? "" : b.nom, org: x[6], d: "Exemple fictif pour montrer l’appli.", demo: true }, o(x[7], x[8])));
+  st.demo = true; rendre();
+}
+
+/* ---------- Démarrage ---------- */
+async function charger() {
+  const sources = [fetch("data/evenements.json").then(r => r.ok ? r.json() : []).catch(() => [])];
+  if (API) sources.push(fetch(API + "/cathos/agenda", { cache: "no-cache" }).then(r => r.ok ? r.json() : []).catch(() => []));
+  const l = await Promise.all(sources), vu = new Set(); EV = [];
+  for (const e of [].concat(...l)) if (e && e.id && !vu.has(e.id) && isFinite(e.lat) && isFinite(e.lon)) { vu.add(e.id); EV.push(e); }
+}
+(async () => {
+  try { T = await (await fetch("data/types.json")).json(); } catch (_) {}
+  T.familles.forEach(f => FAM[f.k] = f);
+  const pf = ACC.c && ACC.c.cathos && ACC.c.cathos.prefs;
+  if (pf && pf.familles) st.fam = new Set(pf.familles);
+  filtresUI(); accUI(); $("rayon").value = String(st.rayon);
+  if (st.lieu) { $("ou").value = st.lieu.dep ? st.lieu.nom + " (" + st.lieu.dep + ")" : st.lieu.nom; majMesses(); }
+  await charger();
+  const h = location.hash;
+  if (CFG.demo || h === "#demo") demo(); else rendre();
+  if (h.startsWith("#connexion=")) connexion(h.slice(11));
+  else if (h.startsWith("#e=")) detail(decodeURIComponent(h.slice(3)));
+  if (ACC.tok) api("/compte").then(j => { ACC.c = j.compte; FAV = [...new Set(FAV.concat((j.compte.cathos && j.compte.cathos.fav) || []))]; accSave(); accUI(); }).catch(() => {});
+})();
+})();
+</script>
+</body>
+</html>
