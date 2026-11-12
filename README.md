@@ -63,4 +63,8 @@ et l'appli garde le lien vers Messes Info. Les horaires restent ceux saisis par 
 1. Appliquer le correctif serveur dans le dépôt Trucs à faire (`0001-Compte-commun…patch`), pousser : le Worker se redéploie seul.
 2. Créer le dépôt `trucsafaire/trucsdecathos`, y pousser ce dossier, activer GitHub Pages (branche `main`, racine).
 3. Acheter `trucsdecathos.fr`, le brancher sur Cloudflare, puis DNS vers GitHub Pages (le fichier `CNAME` est déjà là).
-4. Facultatif : vérifier `trucsdecathos.fr` chez Brevo et ajouter `MAIL_FROM_CATHOS = "bonjour@trucsdecathos.fr"` dans `wrangler.toml`.
+4. Adresses (Cloudflare → Email → Email Routing, gratuit, comme pour trucsafaire.fr) : `contact@trucsdecathos.fr` (affichée dans les
+   mentions légales et la confidentialité) redirigée vers la boîte personnelle, `bonjour@` redirigée vers `contact@`.
+   Pour **écrire** depuis `contact@` (demande de clé Messes Info…) : dans la messagerie, ajouter l'adresse d'envoi
+   `contact@trucsdecathos.fr` avec le serveur SMTP de Brevo (domaine vérifié chez Brevo, enregistrements SPF/DKIM ajoutés dans Cloudflare).
+5. Facultatif : ajouter `MAIL_FROM_CATHOS = "bonjour@trucsdecathos.fr"` dans `wrangler.toml` pour les liens de connexion.
