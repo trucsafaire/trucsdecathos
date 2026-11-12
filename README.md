@@ -11,7 +11,7 @@ index.html             l'appli (liste, carte, détail, favoris, compte, proposer
 admin.html             espace éditeur : valider, corriger, refuser, retirer (code éditeur de Trucs à faire)
 config.js              adresse du serveur commun (api.trucsafaire.fr)
 data/types.json        familles et pictogrammes   ← python scripts/construire_types.py
-data/evenements.json   événements fixes (vide pour l'instant ; les scripts des agendas diocésains écriront ici)
+data/evenements.json   événements des agendas diocésains   ← python scripts/dioceses.py (chaque nuit, GitHub Actions)
 data/communes-fr.json  communes (copie de Trucs à faire)
 marque/                logos et pictogrammes (pastilles SVG)
 scripts/pictos.py      dessin des pictogrammes (source unique)
@@ -26,6 +26,20 @@ vendor/                MapLibre 4.7.1 (hébergé avec le site)
 - **Événements** : `GET /cathos/agenda` (publiés après relecture) + `data/evenements.json`.
 - **Horaires des messes** : lien vers Messes Info (recherche par position), qui reste la référence tenue par les paroisses.
 - **Démonstration** : `#demo` à la fin de l'adresse affiche des événements fictifs, marqués « Exemple ».
+
+## Agendas des diocèses
+
+`scripts/dioceses.py` lit chaque nuit les agendas publics des diocèses (bibliothèque standard Python, une page par seconde) :
+
+| Diocèse | Site | Méthode |
+|---|---|---|
+| Moulins (03) | catholique-moulins.fr | plan du site des événements (Modern Events Calendar), puis chaque page |
+| Nevers (58) | nievre.catholique.fr | API WordPress du type « agenda », puis chaque page (date sans année : prochaine occurrence) |
+| Autun (71) | autun.catholique.fr | liste « événements à venir » (Event Booking), puis chaque page pour le lieu |
+
+Un événement n'est gardé que s'il est à venir, ouvert au public (conseils, commissions, réunions internes écartés), classé dans un des 53 types
+par mots-clés, et placé dans une commune du département (« Maison du diocèse », « Cathédrale » : ville du siège). Le journal de chaque passage
+dit ce qui a été écarté et pourquoi. Une source en panne garde ses anciens événements. Ajouter un diocèse = écrire un adaptateur et l'ajouter à `SOURCES`.
 
 ## Mise en ligne
 

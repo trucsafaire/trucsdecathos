@@ -1,0 +1,31 @@
+name: Agendas des diocèses
+on:
+  schedule:
+    - cron: "47 3 * * *"   # chaque nuit à 3 h 47 UTC
+  workflow_dispatch:
+concurrency:
+  group: donnees
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  recuperer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Lire les agendas (Moulins, Nevers, Autun)
+        run: python scripts/dioceses.py | tee journal.txt
+      - name: Contrôle du fichier produit
+        run: python -c "import json;d=json.load(open('data/evenements.json'));assert isinstance(d,list);print(len(d),'événements')"
+      - name: Enregistrer s'il y a du nouveau
+        run: |
+          if git diff --quiet data/evenements.json; then echo "Rien de nouveau"; exit 0; fi
+          git config user.name "Trucs de cathos (robot)"
+          git config user.email "alertes@trucsafaire.fr"
+          git add data/evenements.json
+          git commit -m "Agendas des diocèses : mise à jour du $(date -u +%F)"
+          git push
