@@ -212,6 +212,11 @@ def image(u, base=""):
     return u
 
 # ---------- Adaptateurs ----------
+def og_img(p, base):
+    """Image de partage (og:image) d'une page, si ce n'est pas un logo."""
+    m = re.search(r'<meta[^>]+property="og:image(?::url)?"[^>]+content="([^"]*)"', p) or re.search(r'<meta[^>]+content="([^"]*)"[^>]+property="og:image"', p)
+    return image(m.group(1), base) if m else ""
+
 def moulins(cs, journal):
     base = "https://www.catholique-moulins.fr"
     sm = lire(base + "/mec-events-sitemap.xml")
@@ -238,7 +243,7 @@ def moulins(cs, journal):
         if not c: journal(f"moulins : écarté (lieu) « {titre} » [{lieu}]"); continue
         h, hf = heures(hh)
         ident = re.search(r"/events/([^/]+)/?$", u).group(1)
-        out.append(evt("moulins", ident, titre, d0, d1, h, hf, lieu, c, desc, u, "Diocèse de Moulins", typ))
+        out.append(evt("moulins", ident, titre, d0, d1, h, hf, lieu, c, desc, u, "Diocèse de Moulins", typ, og_img(p, u)))
     return out
 
 def nevers(cs, journal):
@@ -272,7 +277,7 @@ def nevers(cs, journal):
         c = trouver_commune(cs, lieu, titre, desc, "Nevers")
         if not c: journal(f"nevers : écarté (lieu) « {titre} » [{lieu}]"); continue
         h, hf = heures(hh)
-        out.append(evt("nevers", it["id"], titre, d0, d1, h, hf, lieu.split(" - ")[0], c, desc, it["link"], "Diocèse de Nevers", typ))
+        out.append(evt("nevers", it["id"], titre, d0, d1, h, hf, lieu.split(" - ")[0], c, desc, it["link"], "Diocèse de Nevers", typ, og_img(p, it["link"])))
     return out
 
 def autun(cs, journal):
@@ -303,7 +308,7 @@ def autun(cs, journal):
         ident = re.search(r"/evenement/(\d+)", lien).group(1)
         # une plage de plusieurs semaines (appel à voter, inscription) n'est pas un rendez-vous : on garde le début seulement si court
         if d1 and (d1 - d0).days > 10: journal(f"autun : écarté (durée) « {titre} »"); continue
-        out.append(evt("autun", ident, titre, d0, d1, hs[0] if hs else "", hs[1] if len(hs) > 1 and d1 in (None, d0) else "", lieu.split(",")[0], c, corps[:600], lien, "Diocèse d’Autun", typ))
+        out.append(evt("autun", ident, titre, d0, d1, hs[0] if hs else "", hs[1] if len(hs) > 1 and d1 in (None, d0) else "", lieu.split(",")[0], c, corps[:600], lien, "Diocèse d’Autun", typ, og_img(q, lien)))
     return out
 
 
@@ -672,7 +677,8 @@ def paris(cs, journal):
             c = None if autre and not autre.group(1).startswith("75") else (trouver_commune(cs, lieu, titre, desc, "Paris") or cs_ville(cs, "Paris"))
             if not c: journal(f"paris : écarté (lieu) « {titre} » [{lieu}]"); continue
             ident = re.sub(r"[^a-z0-9]+", "-", lien.rsplit("/", 1)[-1].replace(".html", ""))[:60]
-            out.append(evt("paris", ident, titre, d0, d1, h, hf, re.sub(r"\s*\(\d{5}\)", "", lieu), c, desc, lien, "Diocèse de Paris", typ))
+            out.append(evt("paris", ident, titre, d0, d1, h, hf, re.sub(r"\s*\(\d{5}\)", "", lieu), c, desc, lien, "Diocèse de Paris", typ,
+                           next((image(x, base) for x in re.findall(r'<img[^>]+?(?:data-src|src)="([^"]+)"', b) if image(x, base)), "")))
     journal(f"paris : {len(vus)} rendez-vous lus, {len(out)} gardés")
     return out
 
