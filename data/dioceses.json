@@ -68,7 +68,7 @@
 {"id": "poitiers", "nom": "Archidiocèse de Poitiers", "url": "https://www.poitiers.catholique.fr/", "siege": "Poitiers", "deps": ["86", "79"]},
 {"id": "pontoise", "nom": "Diocèse de Pontoise", "url": "https://www.catholique95.fr/", "siege": "Pontoise", "deps": ["95"]},
 {"id": "quimper", "nom": "Diocèse de Quimper et Léon", "url": "https://www.diocese-quimper.fr/", "siege": "Quimper", "deps": ["29"]},
-{"id": "reims", "nom": "Archidiocèse de Reims", "url": "https://www.catholique-reims.fr/", "siege": "Reims", "deps": ["51", "08"], "agenda": "https://catholique-reims.fr/agenda/"},
+{"id": "reims", "nom": "Archidiocèse de Reims", "url": "https://catholique-reims.fr/", "siege": "Reims", "deps": ["51", "08"], "agenda": "https://catholique-reims.fr/agenda/"},
 {"id": "rennes", "nom": "Archidiocèse de Rennes", "url": "https://www.rennes.catholique.fr/", "siege": "Rennes", "deps": ["35"]},
 {"id": "rodez", "nom": "Diocèse de Rodez", "url": "https://rodez.catholique.fr/", "siege": "Rodez", "deps": ["12"], "agenda": "https://rodez.catholique.fr/agenda-actus"},
 {"id": "rouen", "nom": "Archidiocèse de Rouen", "url": "https://rouen.catholique.fr/", "siege": "Rouen", "deps": ["76"]},
