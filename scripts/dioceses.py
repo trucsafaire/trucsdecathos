@@ -532,9 +532,11 @@ def _liste(page, conf, base):
         else:
             d0, d1, h, hf = quand(corps)
         lieu = ""
+        adr = re.search(r'itemprop="address"[^>]*content="([^"]+)"', b)  # Simple Calendar (Google Agenda) : adresse en métadonnée
         m = re.search(r'itemprop="location"[^>]*>(.*?)</div>', b, re.S) or \
             re.search(r'class="[^"]*\b(?:lieu|location|adresse|place)\b[^"]*"[^>]*>(.*?)</', b, re.S)
-        if m: lieu = re.sub(r"\s+", " ", texte(m.group(1))).strip(" >")
+        if adr: lieu = html.unescape(adr.group(1)).strip()
+        elif m: lieu = re.sub(r"\s+", " ", texte(m.group(1))).strip(" >")
         elif conf.get("lieu"):
             m = re.search(conf["lieu"], b, re.S)
             if m: lieu = re.sub(r"\s+", " ", texte(m.group(1))).strip()
@@ -603,6 +605,7 @@ def generique(d, cs, journal):
         typ = classer(r["t"], r["corps"])
         if not typ: journal(f"{nom} : écarté (type) « {r['t']} »"); continue
         c = trouver_commune(cs, r["lieu"], r["t"], r["corps"], d.get("siege"))
+        if not c and not r["lieu"] and d.get("liste", {}).get("defaut"): c = cs_ville(cs, d["liste"]["defaut"])  # agenda sans lieu (Le Havre)
         if not c: journal(f"{nom} : écarté (lieu) « {r['t']} » [{r['lieu']}]"); continue
         ident = re.sub(r"[^a-z0-9]+", "-", sans_accent(urllib.parse.urlsplit(u).path).strip("/"))[-60:] or str(abs(hash(r["t"])))
         if methode == "tribe": ident += "-" + r["d0"].isoformat()
