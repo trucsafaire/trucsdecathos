@@ -371,7 +371,7 @@ def lire_page(p, u):
     og = re.search(r'<meta[^>]+property="og:title"[^>]+content="([^"]*)"', p)
     tt = re.search(r"<title[^>]*>(.*?)</title>", p, re.S)
     h2 = re.search(r"<h2[^>]*>(.*?)</h2>", p[p.find("<h1"):] if "<h1" in p else p, re.S)
-    nom_site = re.compile(r"^(agenda|accueil|[ée]v[ée]nements?)$|^(archi)?dioc[eè]se\b|^[ée]glise catholique\b", re.I)
+    nom_site = re.compile(r"^(agenda|accueil|[ée]v[éeè]nements?)$|^(archi)?dioc[eè]se\b|^[ée]glise catholique\b", re.I)
     titre = ""
     for brut in (h1 and h1.group(1), og and og.group(1), tt and tt.group(1), h2 and h2.group(1)):
         t = re.sub(r"\s+", " ", html.unescape(texte(brut or ""))).strip()
@@ -494,7 +494,15 @@ def generique(d, cs, journal):
     except Exception:
         bruts = []
     if not bruts:
-        paires = _plans(base, journal, nom)
+        paires = _plans(base, journal, nom) if not d.get("rss") else []
+        if d.get("rss"):  # flux RSS de l'agenda (Grenoble) : liens des prochains rendez-vous
+            try:
+                vus_rss, paires = set(), []
+                for u in re.findall(r"<link>\s*(?:<!\[CDATA\[)?\s*([^<\]\s]+)", lire(d["rss"]))[1:]:
+                    cle = (re.search(r"([A-Za-z0-9]{8,})\.html$", u) or re.search(r"(.*)", u)).group(1)  # même rendez-vous sous deux adresses
+                    if cle not in vus_rss: vus_rss.add(cle); paires.append((html.unescape(u), ""))
+                paires = paires[::-1]
+            except Exception as e: journal(f"{nom} : flux RSS illisible ({e})")
         if not paires:
             paires = [(u, "") for u in _liens_agenda(base, d)][::-1]  # remis dans l'ordre de la page plus bas
             if not paires: journal(f"{nom} : aucun agenda lisible automatiquement ({base})"); return []
@@ -533,7 +541,43 @@ def generique(d, cs, journal):
 def cs_ville(cs, nom):
     return next((c for _, c in cs if c[0] == nom), None)
 
-DEDIES = {"moulins": moulins, "nevers": nevers, "autun": autun}  # adaptateurs écrits à la main, plus précis
+def paris(cs, journal):
+    """Diocèse de Paris (SPIP) : la page agenda liste tout (titre, jour, heure, lieu avec code postal)."""
+    base = "https://dioceseparis.fr/"
+    out, vus = [], set()
+    for debut in (0, 76, 152):
+        try: p = lire(base + "-agenda-.html" + (f"?debut5970={debut}" if debut else ""))
+        except Exception as e: journal(f"paris : page {debut} illisible ({e})"); break
+        blocs = re.findall(r'<div class="block-event">(.*?)(?=<div class="block-event">|<a id=\'pagination|$)', p, re.S)
+        if not blocs: break
+        for b in blocs:
+            m = re.search(r'href="([^"]+)"', b); t = re.search(r'<h4[^>]*>(.*?)</h4>', b, re.S)
+            if not m or not t: continue
+            lien = urllib.parse.urljoin(base, html.unescape(m.group(1)))
+            if lien in vus: continue
+            vus.add(lien)
+            titre = texte(t.group(1))
+            spans = re.findall(r'<span class="date">(.*?)</span>\s*(?:</span>)?', b, re.S)
+            dp = re.search(r'block-event-date">(.*?)</p>', b, re.S)
+            bloc_date = texte(dp.group(1)) if dp else ""
+            lignes = [l.strip() for l in bloc_date.split("\n") if l.strip()]
+            lieu = next((l for l in lignes if re.search(r"\(\d{5}\)|\b75\d{3}\b", l)), "")
+            quand_txt = " ".join(l for l in lignes if l != lieu)
+            d0, d1, h, hf = quand(quand_txt)
+            desc = texte(b[b.find("</p>") + 4:])[:400] if "</p>" in b else ""
+            if not d0 or (d1 or d0) < AUJ or d0 > AUJ + dt.timedelta(days=HORIZON): continue
+            if d1 and (d1 - d0).days > 10: continue
+            typ = classer(titre, desc)
+            if not typ: journal(f"paris : écarté (type) « {titre} »"); continue
+            autre = re.search(r"\((\d{5})\)", lieu)
+            c = None if autre and not autre.group(1).startswith("75") else (trouver_commune(cs, lieu, titre, desc, "Paris") or cs_ville(cs, "Paris"))
+            if not c: journal(f"paris : écarté (lieu) « {titre} » [{lieu}]"); continue
+            ident = re.sub(r"[^a-z0-9]+", "-", lien.rsplit("/", 1)[-1].replace(".html", ""))[:60]
+            out.append(evt("paris", ident, titre, d0, d1, h, hf, re.sub(r"\s*\(\d{5}\)", "", lieu), c, desc, lien, "Diocèse de Paris", typ))
+    journal(f"paris : {len(vus)} rendez-vous lus, {len(out)} gardés")
+    return out
+
+DEDIES = {"moulins": moulins, "nevers": nevers, "autun": autun, "paris": paris}  # adaptateurs écrits à la main, plus précis
 
 def sources():
     """Tous les diocèses de data/dioceses.json : adaptateur dédié s'il existe, sinon générique."""
