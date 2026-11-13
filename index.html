@@ -519,12 +519,18 @@ function monCompte() {
   const cc = (ACC.c && ACC.c.cathos) || {}, p = cc.prefs || {}, sel = new Set(p.familles || []);
   const c = ouvrir('<div class="fh"><div><div class="etq">Compte Trucs</div><h2 id="dlg-t">Mon compte</h2></div>' + croix + '</div><p class="petit" style="font-size:15px" id="mc-e"></p>' +
     '<form id="fm"><fieldset><legend>Ce qui m’intéresse</legend><div class="cases">' + T.familles.map(f => '<label><input type="checkbox" value="' + f.k + '"' + (sel.has(f.k) ? " checked" : "") + '><span style="width:10px;height:10px;border-radius:3px;background:' + f.c + '"></span>' + esc(f.n) + "</label>").join("") + "</div></fieldset>" +
-    '<p class="petit">Vos centres d’intérêt servent à vous proposer les bons événements à l’ouverture de l’appli.</p><button class="btn p" type="submit">Enregistrer</button></form>' +
+    '<p class="petit">Vos centres d’intérêt servent à vous proposer les bons événements à l’ouverture de l’appli.</p>' +
+    '<fieldset><legend>La semaine des cathos</legend><label class="petit" style="display:flex;gap:10px;align-items:flex-start;font-size:15px;color:var(--encre)"><input type="checkbox" id="mc-l" style="width:20px;height:20px;flex:none;accent-color:var(--bleu)"' + (cc.lettre ? " checked" : "") + '><span>Recevoir chaque jeudi par e-mail les rendez-vous près de chez moi (selon mes centres d’intérêt). Désinscription en un clic.</span></label><p class="petit" id="mc-lw"></p></fieldset>' +
+    '<button class="btn p" type="submit">Enregistrer</button></form>' +
     '<hr style="border:0;border-top:1px solid var(--trait);margin:20px 0"><p class="petit">Ce compte est le même sur <a href="' + esc(CFG.tafUrl || "https://trucsafaire.fr/") + '">Trucs à faire</a> : vos sorties et vos favoris de chaque site restent bien rangés à part.</p>' +
     '<div class="actions"><button class="btn" type="button" id="mc-x">Me déconnecter</button><a class="btn ghost" href="' + esc(CFG.tafUrl || "https://trucsafaire.fr/") + '#compte">Exporter ou supprimer mes données</a></div>');
   $("mc-e").textContent = "Connecté avec " + (ACC.c.email || "");
-  c.querySelector("#fm").onsubmit = async ev => { ev.preventDefault(); const familles = [...c.querySelectorAll("input:checked")].map(i => i.value);
-    try { const j = await api("/compte", { cathos: { prefs: { familles } } }); ACC.c = j.compte; accSave(); st.fam = new Set(familles); filtresUI(); rendre(); toast("C’est enregistré"); fermer(); } catch (_) { toast("Enregistrement impossible pour l’instant."); } };
+  const lieuOk = st.lieu && st.lieu.dep, pc = p.commune;
+  $("mc-lw").textContent = lieuOk ? "Autour de " + st.lieu.nom + ", dans un rayon de " + st.rayon + " km (la commune et la distance choisies sur la page d’accueil)." : pc ? "Autour de " + pc.nom + "." : "Choisissez d’abord votre commune sur la page d’accueil.";
+  c.querySelector("#fm").onsubmit = async ev => { ev.preventDefault(); const familles = [...c.querySelectorAll(".cases input:checked")].map(i => i.value), lettre = $("mc-l").checked;
+    if (lettre && !lieuOk && !pc) { toast("Choisissez d’abord votre commune sur la page d’accueil."); return; }
+    const prefs = Object.assign({ familles }, lieuOk ? { commune: { nom: st.lieu.nom, dep: st.lieu.dep, lat: st.lieu.lat, lon: st.lieu.lon }, rayon: st.rayon } : {});
+    try { const j = await api("/compte", { cathos: { prefs, lettre } }); ACC.c = j.compte; accSave(); st.fam = new Set(familles); filtresUI(); rendre(); toast("C’est enregistré"); fermer(); } catch (_) { toast("Enregistrement impossible pour l’instant."); } };
   c.querySelector("#mc-x").onclick = async () => { try { await api("/compte/deconnexion", {}); } catch (_) {} ACC.tok = null; ACC.c = null; accSave(); accUI(); fermer(); toast("À bientôt !"); };
 }
 $("b-cpt").onclick = () => ACC.c ? monCompte() : compte("login");

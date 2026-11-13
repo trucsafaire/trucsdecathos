@@ -32,10 +32,10 @@ jobs:
           MESSESINFO_KEY: ${{ secrets.MESSESINFO_KEY }}   # clé secrète, jamais dans le dépôt
         run: python -u scripts/messesinfo.py | tee journal-messes.txt
       - name: Pages de partage
-        run: python scripts/partage.py
+        run: python scripts/partage.py && python scripts/par_dep.py
       - name: Enregistrer s'il y a du nouveau
         run: |
-          git add -A e 2>/dev/null; for f in data/evenements.json data/dioceses-bilan.json data/messes; do [ -e "$f" ] && git add "$f"; done; git status --short
+          git add -A e data/dep 2>/dev/null; for f in data/evenements.json data/dioceses-bilan.json data/messes; do [ -e "$f" ] && git add "$f"; done; git status --short
           if git diff --cached --quiet; then echo "Rien de nouveau"; exit 0; fi
           git config user.name "Trucs de cathos (robot)"
           git config user.email "alertes@trucsafaire.fr"
