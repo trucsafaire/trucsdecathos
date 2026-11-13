@@ -29,7 +29,7 @@
   "chalons": 0,
   "chambery": 185,
   "chartres": 8,
-  "clermont": 0,
+  "clermont": 9,
   "coutances": 5,
   "creteil": 25,
   "digne": 46,
@@ -41,9 +41,9 @@
   "grenoble": 13,
   "la-rochelle": 45,
   "langres": 0,
-  "laval": 0,
-  "le-havre": 0,
-  "le-mans": 0,
+  "laval": 56,
+  "le-havre": 17,
+  "le-mans": 1,
   "le-puy": 19,
   "lille": 16,
   "limoges": 94,
@@ -100,5 +100,5 @@
   "la-reunion": 0,
   "armees": 0
  },
- "total": 2745
+ "total": 2802
 }
