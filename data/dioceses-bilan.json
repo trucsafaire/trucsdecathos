@@ -20,8 +20,8 @@
   "belfort": 77,
   "belley-ars": 0,
   "besancon": 8,
-  "blois": 0,
-  "bordeaux": 27,
+  "blois": 11,
+  "bordeaux": 26,
   "bourges": 16,
   "cahors": 0,
   "cambrai": 0,
@@ -58,7 +58,7 @@
   "moulins": 31,
   "nancy": 78,
   "nanterre": 15,
-  "nantes": 0,
+  "nantes": 44,
   "nevers": 20,
   "nice": 95,
   "nimes": 69,
@@ -100,5 +100,5 @@
   "la-reunion": 0,
   "armees": 0
  },
- "total": 2554
+ "total": 2608
 }
