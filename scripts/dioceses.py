@@ -34,10 +34,17 @@ def lire(url, pause=1.0, final=False):
         if attente > 0: time.sleep(attente)
         if os.environ.get("DEBUG"): print("  ·", url, flush=True)
         req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept-Language": "fr"})
-        _dernier[hote] = time.time()  # au plus une requête par seconde et par site, une à la fois
-        with urllib.request.urlopen(req, timeout=30) as r:
-            t = r.read(3_000_000).decode("utf-8", "replace")
-            return (t, r.geturl()) if final else t
+        for essai in (1, 2, 3):  # sites parfois lents : on réessaie avant de déclarer la source en panne
+            _dernier[hote] = time.time()  # au plus une requête par seconde et par site, une à la fois
+            try:
+                with urllib.request.urlopen(req, timeout=45) as r:
+                    t = r.read(3_000_000).decode("utf-8", "replace")
+                    return (t, r.geturl()) if final else t
+            except urllib.error.HTTPError:
+                raise
+            except (urllib.error.URLError, TimeoutError, ConnectionError, OSError):
+                if essai == 3: raise
+                time.sleep(5 * essai)
 
 def texte(h):
     h = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", h, flags=re.S | re.I)
