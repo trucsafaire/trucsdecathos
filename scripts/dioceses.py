@@ -192,10 +192,24 @@ def date_fr(s, annee_ref=None):
     except ValueError:
         return None
 
-def evt(src, ident, titre, debut, fin, h, hf, lieu, commune, desc, url, org, typ):
-    return {"id": f"dio-{src}-{ident}", "t": titre[:90], "type": typ, "s": debut.isoformat(), "e": fin.isoformat() if fin and fin != debut else "",
+def evt(src, ident, titre, debut, fin, h, hf, lieu, commune, desc, url, org, typ, img=""):
+    o = {"id": f"dio-{src}-{ident}", "t": titre[:90], "type": typ, "s": debut.isoformat(), "e": fin.isoformat() if fin and fin != debut else "",
             "h": h, "hf": hf if hf != h else "", "lieu": lieu[:90], "w": commune[0], "z": commune[1], "lat": commune[2], "lon": commune[3],
             "d": desc[:400], "u": url, "org": org, "src": src}
+    if img: o["img"] = img
+    return o
+
+# Images : on garde les photos/affiches, pas les logos ni les icônes du site
+RX_IMG_NON = re.compile(r"logo|icon|favicon|blason|armoiries|avatar|placeholder|default|sprite|pixel|\.svg|\.gif", re.I)
+def image(u, base=""):
+    if isinstance(u, list): u = u[0] if u else ""
+    if isinstance(u, dict): u = u.get("url") or u.get("@id") or ""
+    u = html.unescape(str(u or "").strip())
+    if not u: return ""
+    u = urllib.parse.urljoin(base, u) if base else u
+    if u.startswith("http://"): u = "https://" + u[7:]
+    if not u.startswith("https://") or len(u) > 500 or RX_IMG_NON.search(u) or re.search(r"[\s\"'<>]", u): return ""
+    return u
 
 # ---------- Adaptateurs ----------
 def moulins(cs, journal):
@@ -385,6 +399,8 @@ def lire_page(p, u):
         t = re.split(r"\s+[-–|]\s+(?=[^-–|]*(?:dioc[eè]se|catholique)[^-–|]*$)", t, flags=re.I)[0].strip()  # « Titre – Diocèse de X »
         t = re.sub(r"^agenda de (l.[ée]v[êe]que|mgr [^:]+)\s*:\s*", "", t, flags=re.I)
         if 3 < len(t) <= 160 and not nom_site.search(t): titre = t; break
+    ogi = re.search(r'<meta[^>]+property="og:image(?::url)?"[^>]+content="([^"]*)"', p) or re.search(r'<meta[^>]+content="([^"]*)"[^>]+property="og:image"', p)
+    img = image(ogi.group(1), u) if ogi else ""
     i = p.find("<h1")
     corps = texte(p[i:i + 40000]) if i > 0 else texte(p)[:20000]
     corps = re.sub(r"\s+", " ", corps)
@@ -392,7 +408,7 @@ def lire_page(p, u):
         d0, h = _iso(ld.get("startDate")); d1, hf = _iso(ld.get("endDate"))
         titre = html.unescape(ld.get("name") or titre)
         desc = texte(html.unescape(ld.get("description") or "")) or corps
-        return dict(t=titre, d0=d0, d1=d1, h=h, hf=hf, lieu=_lieu_ld(ld.get("location")), corps=desc)
+        return dict(t=titre, d0=d0, d1=d1, h=h, hf=hf, lieu=_lieu_ld(ld.get("location")), corps=desc, img=image(ld.get("image"), u) or img)
     lieu = ""
     for motif_d, motif_l in (("single-event-date", "single-event-place"), ("mec-single-event-date", "mec-single-event-location"),
                              ("em-event-when", "em-event-location"), ("tribe-events-schedule", "tribe-venue")):
@@ -413,7 +429,7 @@ def lire_page(p, u):
     lieu = re.sub(r"^(lieu|o[uù])\s*:?\s*", "", lieu.strip(), flags=re.I)
     lieu = re.split(r"\s+(?:Le|Du)\s+\d|\s+Type d", lieu)[0][:120]
     d0, d1, h, hf = quand(dt_txt)
-    return dict(t=titre, d0=d0, d1=d1, h=h, hf=hf, lieu=lieu, corps=corps[:1500])
+    return dict(t=titre, d0=d0, d1=d1, h=h, hf=hf, lieu=lieu, corps=corps[:1500], img=img)
 
 def _plans(base, journal, nom):
     """Plans du site consacrés aux événements → [(url, lastmod)]."""
@@ -449,7 +465,7 @@ def _tribe(base):
             lieu = ", ".join(t for t in (v.get("venue") or "", v.get("address") or "", " ".join(t for t in (v.get("zip") or "", v.get("city") or "") if t)) if t)
             d0, h = _iso(e.get("start_date")); d1, hf = _iso(e.get("end_date"))
             if e.get("all_day"): h = hf = ""
-            out.append((e.get("url") or "", dict(t=html.unescape(e.get("title") or ""), d0=d0, d1=d1, h=h, hf=hf, lieu=html.unescape(lieu), corps=texte(e.get("description") or "")[:1500])))
+            out.append((e.get("url") or "", dict(t=html.unescape(e.get("title") or ""), d0=d0, d1=d1, h=h, hf=hf, lieu=html.unescape(lieu), corps=texte(e.get("description") or "")[:1500], img=image(e.get("image") or ""))))
         if not x.get("next_rest_url"): break
         page += 1
     return out
@@ -507,7 +523,8 @@ def _ics(texte_ics):
         d0, h = jour(champ("DTSTART")); d1, hf = jour(champ("DTEND"))
         if d1 and not hf and d0 and d1 > d0: d1 = d1 - dt.timedelta(days=1)  # fin exclusive des journées entières
         out.append((champ("URL"), dict(t=dec(champ("SUMMARY")), d0=d0, d1=d1 if d1 != d0 else None, h=h, hf=hf,
-                                       lieu=dec(champ("LOCATION")).split("\n")[0], corps=texte(dec(champ("DESCRIPTION")))[:1500])))
+                                       lieu=dec(champ("LOCATION")).split("\n")[0], corps=texte(dec(champ("DESCRIPTION")))[:1500],
+                                       img=next((image(a) for a in re.findall(r"^ATTACH[^:\n]*:(\S+)$", v, re.M) if re.search(r"\.(jpe?g|png|webp)(\?|$)", a, re.I)), ""))))
     return out
 
 def _liste(page, conf, base):
@@ -541,7 +558,8 @@ def _liste(page, conf, base):
             m = re.search(conf["lieu"], b, re.S)
             if m: lieu = re.sub(r"\s+", " ", texte(m.group(1))).strip()
         if RX_DATE.search(sans_accent(lieu)) and len(lieu) < 40: lieu = ""  # une date prise pour un lieu
-        if titre and d0: out.append((lien, dict(t=titre, d0=d0, d1=d1 if d1 != d0 else None, h=h, hf=hf if hf != h else "", lieu=lieu[:120], corps=corps[:1500])))
+        im = next((image(x, base) for x in re.findall(r'<img[^>]+?(?:data-src|data-lazy-src|src)="([^"]+)"', b) if image(x, base)), "")
+        if titre and d0: out.append((lien, dict(t=titre, d0=d0, d1=d1 if d1 != d0 else None, h=h, hf=hf if hf != h else "", lieu=lieu[:120], corps=corps[:1500], img=im)))
     return out
 
 def generique(d, cs, journal):
@@ -590,7 +608,7 @@ def generique(d, cs, journal):
         for u, lm in paires[:MAX_PAGES]:
             if u.rstrip("/") == base or re.search(r"/(events|agenda|evenements?)/?$", u): continue
             c = CACHE.get(u)
-            if lm and c and c.get("lm") == lm:
+            if lm and c and c.get("lm") == lm and "img" in (c.get("r") or {}):
                 r = _du_cache(c.get("r")); repris += 1
             else:
                 try: r = lire_page(lire(u), u)
@@ -598,6 +616,10 @@ def generique(d, cs, journal):
             CACHE_NEUF[u] = {"lm": lm, "r": _vers_cache(r)}
             bruts.append((u, r))
         methode += f" ({repris} en cache)"
+    freq = {}
+    for _, r in bruts:
+        if r and r.get("img"): freq[r["img"]] = freq.get(r["img"], 0) + 1
+    commune_img = {i for i, n in freq.items() if n >= 3 and n >= len(bruts) * 0.3}
     out = []
     for u, r in bruts:
         if not r or not r["d0"] or not r["t"] or (r["d1"] or r["d0"]) < AUJ: continue
@@ -611,8 +633,8 @@ def generique(d, cs, journal):
         ident = re.sub(r"[^a-z0-9]+", "-", sans_accent(urllib.parse.urlsplit(u).path).strip("/"))[-60:] or str(abs(hash(r["t"])))
         if methode == "tribe": ident += "-" + r["d0"].isoformat()
         lieu = re.split(r",\s*\d{5}\b", r["lieu"])[0]
-        out.append(evt(nom, ident, r["t"], r["d0"], r["d1"], r["h"], r["hf"], lieu, c, r["corps"], u, d["nom"], typ))
-    journal(f"{nom} : {methode}, {len(bruts)} pages lues, {len(out)} gardés")
+        out.append(evt(nom, ident, r["t"], r["d0"], r["d1"], r["h"], r["hf"], lieu, c, r["corps"], u, d["nom"], typ, "" if r.get("img") in commune_img else r.get("img", "")))
+    journal(f"{nom} : {methode}, {len(bruts)} pages lues, {len(out)} gardés, {sum(1 for e in out if e.get('img'))} avec image")
     return out
 
 def cs_ville(cs, nom):

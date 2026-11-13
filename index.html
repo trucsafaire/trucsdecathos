@@ -71,7 +71,16 @@ main{padding:18px 0 40px}
 .grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:22px 16px}
 .carte{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;text-align:left;background:none;border:0;padding:0;min-width:0;cursor:pointer;color:inherit}
 .th{position:relative;display:grid;place-items:center;aspect-ratio:3/2;border-radius:20px;background:color-mix(in srgb,var(--pc) 16%,var(--surface));color:var(--pc)}
+.th{overflow:hidden}
 .th .gl{width:34%;height:auto}
+.th .ph,.dimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.dimg-w{position:relative;aspect-ratio:16/9;border-radius:20px;overflow:hidden;margin:0 0 14px;background:var(--trait)}
+.autres{margin:34px 0 0;padding:18px;border-radius:var(--rl);background:var(--surface);border:1px solid var(--trait)}
+.autres h2{font:700 13px/1 "DM Sans";letter-spacing:.07em;text-transform:uppercase;color:var(--douce);margin:0 0 12px}
+.autres a{display:flex;align-items:center;gap:14px;color:inherit;text-decoration:none}
+.autres img{width:56px;height:56px;border-radius:14px;flex:none}
+.autres b{display:block;font-size:17px}.autres span{color:var(--douce);font-size:14px}
+.autres .go{margin-left:auto;flex:none;background:#2546D8;color:#fff;font-weight:700;font-size:14px;padding:9px 14px;border-radius:999px}
 .th .fav{position:absolute;right:8px;top:8px}
 .tx{display:grid;gap:2px;padding:0 2px}
 .etq{font:700 11.5px/16px "DM Sans";letter-spacing:.06em;text-transform:uppercase;color:var(--douce)}
@@ -167,6 +176,9 @@ footer a{color:var(--douce)}
   <div id="bandeau"></div>
   <div id="liste" aria-live="polite"></div>
   <div id="carte" hidden></div>
+  <section class="autres" aria-labelledby="autres-t"><h2 id="autres-t">Nos autres applications</h2>
+    <a id="app-taf" href="https://trucsafaire.fr/" target="_blank" rel="noopener"><img src="marque/taf-icone.svg" alt=""><div><b>Trucs à faire</b><span>Brocantes, concerts, marchés, fêtes : les sorties près de chez vous</span></div><span class="go">Découvrir</span></a>
+  </section>
 </main>
 
 <footer><div class="wrap">
@@ -183,6 +195,14 @@ footer a{color:var(--douce)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="config.js"></script>
+<script>
+/* « Nos autres applications » : App Store sur iPhone/iPad, Play Store sur Android, le site sinon (tant qu'un lien de store manque, on garde le site) */
+(function () {
+  const C = window.TDC_CONFIG || {}, ua = navigator.userAgent, a = document.getElementById("app-taf");
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1), android = /Android/.test(ua);
+  a.href = (ios && C.tafAppStore) || (android && C.tafPlayStore) || C.tafUrl || "https://trucsafaire.fr/";
+})();
+</script>
 <script src="vendor/maplibre-gl-4.7.1/maplibre-gl.js" defer></script>
 <script>
 (function () {
@@ -352,10 +372,12 @@ function visibles() {
 }
 
 /* ---------- Affichage ---------- */
+/* Image de l'événement (affiche, photo) : remplace l'icône si elle se charge, sinon l'icône reste */
+function imgHTML(u, cl) { return u && /^https:\/\//.test(u) ? '<img class="' + cl + '" src="' + esc(u) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' : ""; }
 function carteHTML(e) {
   const t = T.types[e.type], f = FAM[t.f], dist = e._km != null ? " · " + (e._km < 10 ? e._km.toFixed(1).replace(".", ",") : Math.round(e._km)) + " km" : "";
   return '<div class="carte" role="button" tabindex="0" data-id="' + esc(e.id) + '" style="--pc:' + f.c + '">' +
-    '<span class="th"><svg class="gl" viewBox="0 0 24 24" aria-hidden="true">' + t.g + "</svg>" +
+    '<span class="th"><svg class="gl" viewBox="0 0 24 24" aria-hidden="true">' + t.g + "</svg>" + imgHTML(e.img, "ph") +
     '<button class="fav" type="button" data-fav="' + esc(e.id) + '" aria-pressed="' + FAV.includes(e.id) + '" aria-label="Favori">' + ico("coeur", 20) + "</button></span>" +
     '<span class="tx"><span class="c">' + esc(t.n) + "</span><h3>" + esc(e.t) + (e.demo ? '<span class="exemple">Exemple</span>' : "") + "</h3>" +
     '<span class="q">' + esc(quand(e)) + '</span><span class="m">' + esc([e.lieu, e.w].filter(Boolean).join(", ")) + dist + "</span></span></div>";
@@ -410,7 +432,7 @@ function ics(e) {
 function detail(id) {
   const e = EV.find(x => x.id === id) || MS.find(x => x.id === id); if (!e) return;
   const t = T.types[e.type], f = FAM[t.f], ou = [e.lieu, e.w].filter(Boolean).join(", ");
-  const c = ouvrir('<div class="fh">' + pastille(e.type, 64) + '<div><div class="etq">' + esc(f.n) + " · " + esc(t.n) + '</div><h2 id="dlg-t">' + esc(e.t) + (e.demo ? '<span class="exemple">Exemple</span>' : "") + "</h2></div>" + croix + "</div>" +
+  const c = ouvrir((e.img && /^https:\/\//.test(e.img) ? '<div class="dimg-w">' + imgHTML(e.img, "dimg").replace('onerror="this.remove()"', 'onerror="this.parentNode.remove()"') + "</div>" : "") + '<div class="fh">' + pastille(e.type, 64) + '<div><div class="etq">' + esc(f.n) + " · " + esc(t.n) + '</div><h2 id="dlg-t">' + esc(e.t) + (e.demo ? '<span class="exemple">Exemple</span>' : "") + "</h2></div>" + croix + "</div>" +
     '<ul class="infos"><li>' + ico("cal") + "<span>" + esc(quand(e)) + "</span></li><li>" + ico("pin") + "<span>" + esc(ou) + "</span></li>" + (e.org ? "<li>" + ico("org") + "<span>" + esc(e.org) + "</span></li>" : "") + "</ul>" +
     (e.d ? '<p class="desc">' + esc(e.d) + "</p>" : "") +
     '<div class="actions"><button class="btn p" type="button" id="d-ics">' + ico("cal") + "Ajouter à mon agenda</button>" +

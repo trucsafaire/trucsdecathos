@@ -4,5 +4,8 @@
 window.TDC_CONFIG = Object.assign({
   apiUrl: "https://api.trucsafaire.fr",
   /* Adresse de Trucs à faire (lien « Mes autres trucs ») */
-  tafUrl: "https://trucsafaire.fr/"
+  tafUrl: "https://trucsafaire.fr/",
+  /* Liens des stores de Trucs à faire : à remplir quand l'app est publiée (vide = le site) */
+  tafAppStore: "",
+  tafPlayStore: ""
 }, window.TDC_CONFIG || {});
