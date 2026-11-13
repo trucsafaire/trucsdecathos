@@ -687,6 +687,8 @@ DEDIES = {"moulins": moulins, "nevers": nevers, "autun": autun, "paris": paris} 
 def sources():
     """Tous les diocèses de data/dioceses.json : adaptateur dédié s'il existe, sinon générique."""
     ds = json.load(open(os.path.join(RACINE, "data", "dioceses.json"), encoding="utf-8"))
+    f = os.path.join(RACINE, "data", "communautes.json")  # communautés et sanctuaires : même mécanique que les diocèses
+    if os.path.exists(f): ds += json.load(open(f, encoding="utf-8"))
     return {d["id"]: (d, DEDIES.get(d["id"])) for d in ds}
 
 def main():

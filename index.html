@@ -451,7 +451,7 @@ function detail(id) {
     '<div class="actions"><button class="btn p" type="button" id="d-ics">' + ico("cal") + "Ajouter à mon agenda</button>" +
     '<button class="btn" type="button" id="d-part">' + ico("lien") + "Partager</button>" +
     '<button class="btn" type="button" id="d-fav" data-fav="' + esc(e.id) + '" aria-pressed="' + FAV.includes(e.id) + '">' + ico("coeur") + "Favori</button>" +
-    (e.u ? '<a class="btn" href="' + esc(e.u) + '" target="_blank" rel="noopener">' + ico("lien") + (e.m ? "Voir sur Messes Info" : e.src ? "Voir sur le site du diocèse" : "Site, inscription") + "</a>" : "") + "</div>" +
+    (e.u ? '<a class="btn" href="' + esc(e.u) + '" target="_blank" rel="noopener">' + ico("lien") + (e.m ? "Voir sur Messes Info" : e.src ? (/dioc[eè]se/i.test(e.org || "") ? "Voir sur le site du diocèse" : "Voir sur le site de l’organisateur") : "Site, inscription") + "</a>" : "") + "</div>" +
     '<div class="gps" aria-label="Y aller"><a href="https://www.google.com/maps/dir/?api=1&destination=' + e.lat + "," + e.lon + '" target="_blank" rel="noopener">Google Maps</a><a href="https://waze.com/ul?ll=' + e.lat + "," + e.lon + '&navigate=yes" target="_blank" rel="noopener">Waze</a><a href="https://maps.apple.com/?daddr=' + e.lat + "," + e.lon + '" target="_blank" rel="noopener">Plans</a></div>');
   c.querySelector("#d-ics").onclick = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([ics(e)], { type: "text/calendar" })); a.download = "trucs-de-cathos-" + e.id + ".ics"; document.body.appendChild(a); a.click(); a.remove(); toast("Fichier agenda prêt : ouvrez-le pour l’ajouter."); };
   c.querySelector("#d-fav").onclick = () => toggleFav(e.id);

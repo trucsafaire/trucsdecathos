@@ -1,0 +1,3 @@
+[
+{"id": "chemin-neuf-jeunes", "nom": "Communauté du Chemin Neuf (jeunes)", "url": "https://jeunes.chemin-neuf.fr/", "siege": "", "deps": ["01","13","17","31","33","44","49","59","67","69","73","75","91"], "wpjson": "https://jeunes.chemin-neuf.fr/wp-json/wp/v2/proposition?per_page=60&_fields=link"}
+]
