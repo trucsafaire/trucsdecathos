@@ -378,7 +378,7 @@ def lire_page(p, u):
     og = re.search(r'<meta[^>]+property="og:title"[^>]+content="([^"]*)"', p)
     tt = re.search(r"<title[^>]*>(.*?)</title>", p, re.S)
     h2 = re.search(r"<h2[^>]*>(.*?)</h2>", p[p.find("<h1"):] if "<h1" in p else p, re.S)
-    nom_site = re.compile(r"^(agenda|accueil|[ée]v[éeè]nements?)$|^(archi)?dioc[eè]se\b|^[ée]glise catholique\b", re.I)
+    nom_site = re.compile(r"^(agenda( du dioc[eè]se)?|accueil|[ée]v[éeè]nements?|archives\b.*)$|^(archi)?dioc[eè]se\b|^[ée]glise catholique\b", re.I)
     titre = ""
     for brut in (h1 and h1.group(1), og and og.group(1), tt and tt.group(1), h2 and h2.group(1)):
         t = re.sub(r"\s+", " ", html.unescape(texte(brut or ""))).strip()
@@ -500,7 +500,10 @@ def _ics(texte_ics):
         def jour(x):
             m = re.match(r"(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2}))?", x)
             if not m: return None, ""
-            return dt.date(int(m[1]), int(m[2]), int(m[3])), (f"{m[4]}:{m[5]}" if m[4] and f"{m[4]}{m[5]}" != "0000" else "")
+            if not m[4]: return dt.date(int(m[1]), int(m[2]), int(m[3])), ""
+            t0 = dt.datetime(int(m[1]), int(m[2]), int(m[3]), int(m[4]), int(m[5]))
+            if x.endswith("Z"): t0 += dt.timedelta(hours=2 if 4 <= t0.month <= 10 else 1)  # UTC → heure de Paris (à l'heure près)
+            return t0.date(), (t0.strftime("%H:%M") if t0.hour >= 6 else "")  # minuit, 1 h : journée entière
         d0, h = jour(champ("DTSTART")); d1, hf = jour(champ("DTEND"))
         if d1 and not hf and d0 and d1 > d0: d1 = d1 - dt.timedelta(days=1)  # fin exclusive des journées entières
         out.append((champ("URL"), dict(t=dec(champ("SUMMARY")), d0=d0, d1=d1 if d1 != d0 else None, h=h, hf=hf,
@@ -525,13 +528,13 @@ def _liste(page, conf, base):
         if sd:
             d0, h = _iso((sd.group(1) or sd.group(2)).replace(" ", "T")); d1, hf = _iso(ed.group(1).replace(" ", "T")) if ed else (None, "")
             _, _, h2, hf2 = quand(corps)
-            if h2 and (not h or h == "12:00"): h, hf = h2, hf2  # heure « midi » mise par défaut
+            if not h or h == "12:00": h, hf = h2, hf2  # « midi » mis par défaut quand l'heure n'est pas connue
         else:
             d0, d1, h, hf = quand(corps)
         lieu = ""
-        m = re.search(r'itemprop="location"(.*?)</(?:div|p|span)>\s*(?:</(?:div|p|span)>)?', b, re.S) or \
+        m = re.search(r'itemprop="location"[^>]*>(.*?)</div>', b, re.S) or \
             re.search(r'class="[^"]*\b(?:lieu|location|adresse|place)\b[^"]*"[^>]*>(.*?)</', b, re.S)
-        if m: lieu = re.sub(r"\s+", " ", texte(m.group(1))).strip()
+        if m: lieu = re.sub(r"\s+", " ", texte(m.group(1))).strip(" >")
         elif conf.get("lieu"):
             m = re.search(conf["lieu"], b, re.S)
             if m: lieu = re.sub(r"\s+", " ", texte(m.group(1))).strip()
