@@ -23,11 +23,11 @@
   "blois": 11,
   "bordeaux": 26,
   "bourges": 16,
-  "cahors": 0,
-  "cambrai": 0,
+  "cahors": 5,
+  "cambrai": 26,
   "carcassonne": 0,
   "chalons": 0,
-  "chambery": 0,
+  "chambery": 185,
   "chartres": 8,
   "clermont": 0,
   "coutances": 5,
@@ -68,11 +68,11 @@
   "perigueux": 0,
   "perpignan": 0,
   "poitiers": 41,
-  "pontoise": 0,
+  "pontoise": 6,
   "quimper": 29,
-  "reims": 0,
+  "reims": 74,
   "rennes": 61,
-  "rodez": 0,
+  "rodez": 1,
   "rouen": 19,
   "saint-brieuc": 7,
   "saint-claude": 57,
@@ -100,5 +100,5 @@
   "la-reunion": 0,
   "armees": 0
  },
- "total": 2608
+ "total": 2745
 }
