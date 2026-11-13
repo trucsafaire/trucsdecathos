@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Trucs de cathos · Messes, veillées et pèlerinages près de chez vous</title>
 <meta name="description" content="Messes, adoration, louange, pèlerinages, conférences, soirées jeunes : les événements catholiques près de chez vous, sur liste et sur carte.">
+<meta property="og:type" content="website"><meta property="og:site_name" content="Trucs de cathos"><meta property="og:title" content="Trucs de cathos · Messes, veillées et pèlerinages près de chez vous"><meta property="og:description" content="Messes, adoration, louange, pèlerinages, conférences, soirées jeunes : les événements catholiques près de chez vous."><meta property="og:image" content="https://trucsdecathos.fr/marque/partage-1200x630.png"><meta property="og:url" content="https://trucsdecathos.fr/"><meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#2F6DB5">
 <link rel="icon" href="marque/icone.svg" type="image/svg+xml">
 <link rel="manifest" href="manifest.webmanifest">
@@ -378,6 +379,13 @@ function imgHTML(u, cl, alt) { return u && (/^https:\/\//.test(u) || /^photos\/t
 const PH_T = {"messe-dominicale":"messe","messe-semaine":"messe","messe-anticipee":"messe","messe-solennite":"messe","messe-familles":"messe","messe-latin":"messe","celebration-parole":"messe","laudes":"office","vepres":"office","complies":"office","semaine-sainte":"semaine-sainte","chemin-de-croix":"semaine-sainte","liturgie-orientale":"orientale","confession":"confession","bapteme":"bapteme","confirmation":"confirmation","premiere-communion":"premiere-communion","mariage":"mariage","ordination":"ordination","onction-malades":"onction-malades","adoration":"adoration","louange":"louange","chapelet":"chapelet","neuvaine":"chapelet","veillee":"veillee","procession":"procession","benediction":"procession","pelerinage":"pelerinage","marche":"pelerinage","sanctuaire-marial":"sanctuaire","retraite":"retraite","session":"retraite","conference":"conference","debat":"conference","cine-debat":"conference","lecture":"conference","parcours-decouverte":"conference","groupe-biblique":"bible","catechese":"bible","soiree-jeunes":"jeunes","rassemblement":"jeunes","scouts-camps":"jeunes","eveil-foi":"enfants","familles":"enfants","concert":"concert","visite-eglise":"patrimoine","exposition":"patrimoine","creche":"creche","repas":"fraternite","kermesse":"fraternite","brocante":"fraternite","solidarite":"solidarite","mission":"solidarite"}, PH_N = {"adoration":5,"messe":8,"office":3,"semaine-sainte":5,"confession":4,"bapteme":3,"confirmation":2,"premiere-communion":3,"mariage":5,"ordination":2,"onction-malades":1,"louange":5,"chapelet":8,"veillee":8,"procession":1,"pelerinage":5,"sanctuaire":4,"retraite":6,"conference":3,"bible":7,"jeunes":5,"enfants":5,"concert":2,"patrimoine":7,"creche":6,"fraternite":3,"solidarite":4,"orientale":3};
 function photoType(e, petit) { const k = PH_T[e.type], nb = PH_N[k]; if (!nb) return ""; let h = 0; for (const c of String(e.id || e.t || "")) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   return "photos/types/" + (petit ? "min/" : "") + k + "-" + (h % nb + 1) + ".jpg"; }
+/* Partager : les événements des diocèses ont une page avec aperçu (titre, date, photo) dans e/ */
+async function partager(e) {
+  const url = e.src ? "https://trucsdecathos.fr/e/" + String(e.id).toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 90) + ".html" : location.origin + location.pathname + "#e=" + encodeURIComponent(e.id);
+  const txt = e.t + " · " + quand(e);
+  if (navigator.share) { try { await navigator.share({ title: e.t, text: txt, url }); } catch (x) {} return; }
+  try { await navigator.clipboard.writeText(txt + "\n" + url); toast("Lien copié : collez-le où vous voulez"); } catch (x) { prompt("Lien à partager :", url); }
+}
 function carteHTML(e) {
   const t = T.types[e.type], f = FAM[t.f], dist = e._km != null ? " · " + (e._km < 10 ? e._km.toFixed(1).replace(".", ",") : Math.round(e._km)) + " km" : "";
   return '<div class="carte" role="button" tabindex="0" data-id="' + esc(e.id) + '" style="--pc:' + f.c + '">' +
@@ -441,11 +449,13 @@ function detail(id) {
     '<ul class="infos"><li>' + ico("cal") + "<span>" + esc(quand(e)) + "</span></li><li>" + ico("pin") + "<span>" + esc(ou) + "</span></li>" + (e.org ? "<li>" + ico("org") + "<span>" + esc(e.org) + "</span></li>" : "") + "</ul>" +
     (e.d ? '<p class="desc">' + esc(e.d) + "</p>" : "") +
     '<div class="actions"><button class="btn p" type="button" id="d-ics">' + ico("cal") + "Ajouter à mon agenda</button>" +
+    '<button class="btn" type="button" id="d-part">' + ico("lien") + "Partager</button>" +
     '<button class="btn" type="button" id="d-fav" data-fav="' + esc(e.id) + '" aria-pressed="' + FAV.includes(e.id) + '">' + ico("coeur") + "Favori</button>" +
     (e.u ? '<a class="btn" href="' + esc(e.u) + '" target="_blank" rel="noopener">' + ico("lien") + (e.m ? "Voir sur Messes Info" : e.src ? "Voir sur le site du diocèse" : "Site, inscription") + "</a>" : "") + "</div>" +
     '<div class="gps" aria-label="Y aller"><a href="https://www.google.com/maps/dir/?api=1&destination=' + e.lat + "," + e.lon + '" target="_blank" rel="noopener">Google Maps</a><a href="https://waze.com/ul?ll=' + e.lat + "," + e.lon + '&navigate=yes" target="_blank" rel="noopener">Waze</a><a href="https://maps.apple.com/?daddr=' + e.lat + "," + e.lon + '" target="_blank" rel="noopener">Plans</a></div>');
   c.querySelector("#d-ics").onclick = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([ics(e)], { type: "text/calendar" })); a.download = "trucs-de-cathos-" + e.id + ".ics"; document.body.appendChild(a); a.click(); a.remove(); toast("Fichier agenda prêt : ouvrez-le pour l’ajouter."); };
   c.querySelector("#d-fav").onclick = () => toggleFav(e.id);
+  c.querySelector("#d-part").onclick = () => partager(e);
   history.replaceState(null, "", "#e=" + encodeURIComponent(e.id));
 }
 
