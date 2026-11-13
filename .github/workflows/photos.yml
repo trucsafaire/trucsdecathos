@@ -1,0 +1,19 @@
+name: Photos par type
+on:
+  workflow_dispatch:
+  push:
+    paths: [data/photos-sources.json]
+permissions:
+  contents: write
+jobs:
+  photos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install pillow
+      - run: python scripts/photos.py
+      - run: |
+          git config user.name "trucsdecathos-bot"
+          git config user.email "contact@trucsdecathos.fr"
+          git add photos/types
+          git diff --cached --quiet || (git commit -m "Photos par type" && git pull --rebase && git push)
