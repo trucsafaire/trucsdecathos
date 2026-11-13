@@ -490,16 +490,79 @@ def _liens_agenda(base, d):
         if len(liens) >= 2: return liens
     return []
 
+def _ics(texte_ics):
+    """Fichier iCalendar → [(url, dict brut)]."""
+    t = re.sub(r"\r?\n[ \t]", "", texte_ics)  # lignes repliées
+    out = []
+    for v in re.findall(r"BEGIN:VEVENT(.*?)END:VEVENT", t, re.S):
+        champ = lambda k: (re.search(r"^" + k + r"(?:;[^:\n]*)?:(.*)$", v, re.M) or [None, ""])[1].strip()
+        dec = lambda x: x.replace("\\n", "\n").replace("\\,", ",").replace("\\;", ";")
+        def jour(x):
+            m = re.match(r"(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2}))?", x)
+            if not m: return None, ""
+            return dt.date(int(m[1]), int(m[2]), int(m[3])), (f"{m[4]}:{m[5]}" if m[4] and f"{m[4]}{m[5]}" != "0000" else "")
+        d0, h = jour(champ("DTSTART")); d1, hf = jour(champ("DTEND"))
+        if d1 and not hf and d0 and d1 > d0: d1 = d1 - dt.timedelta(days=1)  # fin exclusive des journées entières
+        out.append((champ("URL"), dict(t=dec(champ("SUMMARY")), d0=d0, d1=d1 if d1 != d0 else None, h=h, hf=hf,
+                                       lieu=dec(champ("LOCATION")).split("\n")[0], corps=texte(dec(champ("DESCRIPTION")))[:1500])))
+    return out
+
+def _liste(page, conf, base):
+    """Page agenda qui affiche tout : un bloc par rendez-vous (motif conf['bloc']), lu sans ouvrir chaque page.
+    Gère aussi les microdonnées schema.org/Event (startDate, name, location)."""
+    blocs = re.split(conf.get("bloc") or r'(?=<[^>]+itemtype="https?://schema\.org/Event")', page)[1:]
+    out = []
+    for b in blocs:
+        if conf.get("sans"): b = re.sub(conf["sans"], " ", b, flags=re.S)
+        lien = re.search(r'(?:href|itemid)="([^"#]+)"', b)
+        lien = urllib.parse.urljoin(base, html.unescape(lien.group(1))) if lien else ""
+        nom = (re.search(r'itemprop="name"[^>]*>(.*?)</', b, re.S) or re.search(r'<(h[1-4]|strong)[^>]*>(?:\s*<a[^>]*>)?(.*?)</', b, re.S)
+               or re.search(r'class="[^"]*(?:heading|title|titre)[^"]*"[^>]*>(.*?)</', b, re.S))
+        titre = texte(nom.groups()[-1]).strip() if nom else ""
+        corps = re.sub(r"\s+", " ", texte(b)).strip()
+        sd = re.search(r'itemprop="startDate"[^>]*(?:content|datetime)="([^"]+)"|(?:content|datetime)="([^"]+)"[^>]*itemprop="startDate"', b)
+        ed = re.search(r'itemprop="endDate"[^>]*(?:content|datetime)="([^"]+)"', b)
+        if sd:
+            d0, h = _iso((sd.group(1) or sd.group(2)).replace(" ", "T")); d1, hf = _iso(ed.group(1).replace(" ", "T")) if ed else (None, "")
+            _, _, h2, hf2 = quand(corps)
+            if h2 and (not h or h == "12:00"): h, hf = h2, hf2  # heure « midi » mise par défaut
+        else:
+            d0, d1, h, hf = quand(corps)
+        lieu = ""
+        m = re.search(r'itemprop="location"(.*?)</(?:div|p|span)>\s*(?:</(?:div|p|span)>)?', b, re.S) or \
+            re.search(r'class="[^"]*\b(?:lieu|location|adresse|place)\b[^"]*"[^>]*>(.*?)</', b, re.S)
+        if m: lieu = re.sub(r"\s+", " ", texte(m.group(1))).strip()
+        elif conf.get("lieu"):
+            m = re.search(conf["lieu"], b, re.S)
+            if m: lieu = re.sub(r"\s+", " ", texte(m.group(1))).strip()
+        if titre and d0: out.append((lien, dict(t=titre, d0=d0, d1=d1 if d1 != d0 else None, h=h, hf=hf if hf != h else "", lieu=lieu[:120], corps=corps[:1500])))
+    return out
+
 def generique(d, cs, journal):
     nom = d["id"]
     try: _, base = lire(d["url"], final=True)
     except Exception as e: raise RuntimeError(f"site injoignable ({e})")
     sp = urllib.parse.urlsplit(base); base = f"{sp.scheme}://{sp.netloc}"
     bruts, methode = [], ""
-    try:
-        bruts = _tribe(base); methode = "tribe"
-    except Exception:
-        bruts = []
+    if d.get("ics"):  # calendrier iCalendar publié par le site (Pontoise)
+        try: bruts = _ics(lire(d["ics"])); methode = "ics"
+        except Exception as e: journal(f"{nom} : calendrier illisible ({e})")
+    if not bruts and d.get("liste"):  # page agenda qui affiche tout (Cahors, Chambéry, Cambrai…)
+        try:
+            p, fin = lire(d["liste"]["url"], final=True); bruts = _liste(p, d["liste"], fin); methode = "liste"
+        except Exception as e: journal(f"{nom} : page agenda illisible ({e})")
+    if not bruts and d.get("wpjson"):  # type d'événement WordPress (Langres : Sugar Calendar) → chaque page
+        try:
+            for x in json.loads(lire(d["wpjson"])):
+                u = x.get("link")
+                if u: bruts.append((u, lire_page(lire(u), u)))
+            methode = "wp-json"
+        except Exception as e: journal(f"{nom} : API WordPress illisible ({e})")
+    if not bruts:
+        try:
+            bruts = _tribe(base); methode = "tribe"
+        except Exception:
+            bruts = []
     if not bruts:
         paires = _plans(base, journal, nom) if not d.get("rss") else []
         if d.get("rss"):  # flux RSS de l'agenda (Grenoble) : liens des prochains rendez-vous
