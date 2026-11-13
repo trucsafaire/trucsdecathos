@@ -1,0 +1,31 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>API ouverte · Trucs de cathos</title><link rel="icon" href="marque/icone.svg"><link rel="stylesheet" href="fonts/fonts.css">
+<style>body{margin:0;background:#FBF8F1;color:#141A33;font:400 16px/1.6 "DM Sans",system-ui,sans-serif}main{max-width:760px;margin:0 auto;padding:32px 20px 64px}h1,h2{font-family:Outfit,sans-serif;letter-spacing:-.02em}h1{font-size:34px;margin:18px 0}h2{font-size:21px;margin:28px 0 8px}a{color:#2F6DB5}.l{display:flex;align-items:center;gap:10px;text-decoration:none;color:#141A33;font:700 20px Outfit}
+@media (prefers-color-scheme:dark){body{background:#0F1629;color:#EEF0F8}a{color:#7FA9E0}.l{color:#EEF0F8}}</style></head>
+<body><main><a class="l" href="./"><img src="marque/icone.svg" width="36" height="36" alt="">Trucs de cathos</a>
+<h1>API ouverte</h1>
+<p>Les rendez-vous de Trucs de cathos sont libres de réutilisation : application de prière, site de paroisse, écran d’accueil d’une église… Pas de clé, pas d’inscription. Merci simplement de citer « Trucs de cathos » et de garder le lien vers la page d’origine de chaque événement (champ <code>u</code>).</p>
+<h2>Les fichiers</h2>
+<p>Fichiers JSON statiques, mis à jour chaque semaine, lisibles depuis n’importe quel site (en-tête <code>Access-Control-Allow-Origin: *</code>).</p>
+<ul>
+<li><code>https://trucsdecathos.fr/data/evenements.json</code> : tous les événements à venir des diocèses (≈ 3 000, 2,6 Mo).</li>
+<li><code>https://trucsdecathos.fr/data/dep/&lt;code&gt;.json</code> : les mêmes, par département (<code>03</code>, <code>58</code>, <code>2A</code>…), beaucoup plus légers : à préférer dans une appli mobile.</li>
+<li><code>https://trucsdecathos.fr/data/types.json</code> : les 53 types d’événements (nom, famille) et les 8 familles (nom, couleur).</li>
+<li><code>https://trucsdecathos.fr/data/messes/&lt;code&gt;.json</code> : horaires des messes du département (source Messes Info), quand ils sont disponibles.</li>
+<li><code>https://api.trucsafaire.fr/cathos/agenda</code> : les événements proposés par les paroisses et les visiteurs, relus avant publication.</li>
+</ul>
+<h2>Un événement</h2>
+<pre style="white-space:pre-wrap;background:#fff;border-radius:12px;padding:14px;font-size:14px">{ "id": "dio-moulins-…", "t": "Veillée d’adoration", "type": "adoration",
+  "s": "2026-11-20", "e": "", "h": "20:30", "hf": "22:00",
+  "lieu": "Église Saint-Pierre", "w": "Moulins", "z": "03", "lat": 46.566, "lon": 3.333,
+  "d": "Description courte…", "u": "https://…/page-d-origine", "org": "Diocèse de Moulins", "img": "https://…/affiche.jpg" }</pre>
+<p><code>s</code> début et <code>e</code> fin (AAAA-MM-JJ), <code>h</code> et <code>hf</code> heures (HH:MM), <code>w</code> commune, <code>z</code> département. <code>img</code> n’existe que si l’organisateur a publié une affiche.</p>
+<h2>Exemple : ce qui se passe près de moi</h2>
+<pre style="white-space:pre-wrap;background:#fff;border-radius:12px;padding:14px;font-size:14px">const km = (a, b, c, d) =&gt; Math.hypot((d - b) * Math.cos((a + c) / 2 * Math.PI / 180) * 111.32, (c - a) * 110.57);
+async function presDeMoi(lat, lon, dep, rayon = 20) {
+  const ev = await fetch("https://trucsdecathos.fr/data/dep/" + dep + ".json").then(r =&gt; r.json());
+  const auj = new Date().toISOString().slice(0, 10);
+  return ev.filter(e =&gt; (e.e || e.s) &gt;= auj &amp;&amp; km(lat, lon, e.lat, e.lon) &lt;= rayon);
+}</pre>
+<p>Pour ouvrir un événement dans Trucs de cathos : <code>https://trucsdecathos.fr/#e=&lt;id&gt;</code>.</p>
+<h2>Une question, un usage ?</h2><p>Écrivez à <a href="mailto:contact@trucsdecathos.fr">contact@trucsdecathos.fr</a> : on aime savoir où les rendez-vous sont repris.</p>
+</main></body></html>
