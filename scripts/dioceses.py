@@ -519,7 +519,7 @@ def _liste(page, conf, base):
         if conf.get("sans"): b = re.sub(conf["sans"], " ", b, flags=re.S)
         lien = re.search(r'(?:href|itemid)="([^"#]+)"', b)
         lien = urllib.parse.urljoin(base, html.unescape(lien.group(1))) if lien else ""
-        nom = (re.search(r'itemprop="name"[^>]*>(.*?)</', b, re.S) or re.search(r'<(h[1-4]|strong)[^>]*>(?:\s*<a[^>]*>)?(.*?)</', b, re.S)
+        nom = ((re.search(conf["titre"], b, re.S) if conf.get("titre") else None) or re.search(r'itemprop="name"[^>]*>(.*?)</', b, re.S) or re.search(r'<(h[1-4]|strong)[^>]*>(?:\s*<a[^>]*>)?(.*?)</', b, re.S)
                or re.search(r'class="[^"]*(?:heading|title|titre)[^"]*"[^>]*>(.*?)</', b, re.S))
         titre = texte(nom.groups()[-1]).strip() if nom else ""
         corps = re.sub(r"\s+", " ", texte(b)).strip()
@@ -540,6 +540,7 @@ def _liste(page, conf, base):
         elif conf.get("lieu"):
             m = re.search(conf["lieu"], b, re.S)
             if m: lieu = re.sub(r"\s+", " ", texte(m.group(1))).strip()
+        if RX_DATE.search(sans_accent(lieu)) and len(lieu) < 40: lieu = ""  # une date prise pour un lieu
         if titre and d0: out.append((lien, dict(t=titre, d0=d0, d1=d1 if d1 != d0 else None, h=h, hf=hf if hf != h else "", lieu=lieu[:120], corps=corps[:1500])))
     return out
 
