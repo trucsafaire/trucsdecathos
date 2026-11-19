@@ -682,7 +682,42 @@ def paris(cs, journal):
     journal(f"paris : {len(vus)} rendez-vous lus, {len(out)} gardés")
     return out
 
-DEDIES = {"moulins": moulins, "nevers": nevers, "autun": autun, "paris": paris}  # adaptateurs écrits à la main, plus précis
+def carcassonne(cs, journal):
+    """Diocèse de Carcassonne et Narbonne : la date est dans la liste /evenements/ (« Le 28 novembre 2026 »),
+    les heures et le lieu dans le texte de chaque fiche."""
+    base = "https://www.aude.catholique.fr"
+    p = lire(base + "/evenements/")
+    out = []
+    for b in re.split(r"<li>(?=<div class=\"wp-block-latest-posts__featured-image\")", p)[1:]:
+        m = re.search(r'class="wp-block-latest-posts__post-title" href="([^"]+)">(.*?)</a>', b, re.S)
+        dh = re.search(r'class="date_hour">(.*?)</p>', b, re.S)
+        if not m or not dh: continue
+        lien, titre, quand_txt = m.group(1), texte(m.group(2)), texte(dh.group(1))
+        extrait = texte((re.search(r'post-excerpt">(.*?)</div>', b, re.S) or [None, ""])[1])
+        try: q = lire(lien)
+        except Exception as e: journal(f"carcassonne : {lien} illisible ({e})"); continue
+        i, j = q.find("class=\"wp-block-media-text__content"), q.find("89 rue Jean Bringer")
+        corps = texte(q[i:j if j > i else i + 15000]).split(">", 1)[-1] if i > 0 else extrait
+        corps = re.sub(r"^\s*" + re.escape(titre) + r"\s*", "", corps.strip()) or extrait
+        d0, d1, h, hf = quand(quand_txt)
+        if not h:  # heure absente de la liste : première heure citée dans la fiche
+            h, hf = heures(corps)[0], ""  # dans le texte, la 2e heure est souvent un autre rendez-vous, pas la fin
+        if not d0 or (d1 or d0) < AUJ or d0 > AUJ + dt.timedelta(days=HORIZON): continue
+        if d1 and (d1 - d0).days > 10: journal(f"carcassonne : écarté (durée) « {titre} »"); continue
+        typ = classer(titre, corps or extrait)
+        if not typ: journal(f"carcassonne : écarté (type) « {titre} »"); continue
+        lieu = (re.search(r"((?:basilique|cath[ée]drale|[ée]glise|chapelle|abbaye|sanctuaire|salle|maison dioc[ée]saine)[^\n.,;:]{3,60})", corps, re.I) or [None, ""])[1].strip()
+        if "lourdes" in sans_accent(titre): lieu = "Lourdes (départ du diocèse)"
+        c = trouver_commune(cs, lieu, titre, corps or extrait, "Carcassonne")
+        if not c and re.search(r"dioc[ée]sain", titre, re.I): c = cs_ville(cs, "Carcassonne")  # rendez-vous diocésain sans lieu : siège
+        if not c: journal(f"carcassonne : écarté (lieu) « {titre} » [{lieu}]"); continue
+        img = image((re.search(r'data-lazy-src="([^"]+)"', b) or [None, ""])[1], base) or og_img(q, lien)
+        ident = lien.rstrip("/").rsplit("/", 1)[-1][:60]
+        out.append(evt("carcassonne", ident, titre, d0, d1, h, hf, lieu, c, (corps or extrait)[:600], lien, "Diocèse de Carcassonne et Narbonne", typ, img))
+    journal(f"carcassonne : {len(out)} gardés")
+    return out
+
+DEDIES = {"moulins": moulins, "nevers": nevers, "autun": autun, "paris": paris, "carcassonne": carcassonne}  # adaptateurs écrits à la main, plus précis
 
 def sources():
     """Tous les diocèses de data/dioceses.json : adaptateur dédié s'il existe, sinon générique."""

@@ -23,7 +23,7 @@
 {"id": "bourges", "nom": "Archidiocèse de Bourges", "url": "https://www.diocese-bourges.org/", "siege": "Bourges", "deps": ["18", "36"]},
 {"id": "cahors", "nom": "Diocèse de Cahors", "url": "https://cahors.catholique.fr/", "siege": "Cahors", "deps": ["46"], "agenda": "https://cahors.catholique.fr/spip.php?page=agenda", "liste": {"url": "https://cahors.catholique.fr/spip.php?page=agenda"}},
 {"id": "cambrai", "nom": "Archidiocèse de Cambrai", "url": "https://www.cathocambrai.com/", "siege": "Cambrai", "deps": ["59"], "agenda": "https://www.cathocambrai.com/rubrique-4927-agenda.html", "liste": {"url": "https://www.cathocambrai.com/rubrique-4927-agenda.html", "bloc": "(?=<div class=\"[^\"]*c-card_evenement group)", "sans": "<div class=\"[^\"]*c-card_evenement_date.*?</div>", "lieu": "#pin\"></svg>\\s*</div>\\s*<div[^>]*>(.*?)</div>"}},
-{"id": "carcassonne", "nom": "Diocèse de Carcassonne et Narbonne", "url": "https://www.aude.catholique.fr/", "siege": "Carcassonne", "deps": ["11"]},
+{"id": "carcassonne", "nom": "Diocèse de Carcassonne et Narbonne", "url": "https://www.aude.catholique.fr/", "agenda": "https://www.aude.catholique.fr/evenements/", "siege": "Carcassonne", "deps": ["11"]},
 {"id": "chalons", "nom": "Diocèse de Châlons", "url": "https://chalons.catholique.fr/", "siege": "Châlons-en-Champagne", "deps": ["51"]},
 {"id": "chambery", "nom": "Archidiocèse de Chambéry", "url": "https://www.catholique-savoie.fr/", "siege": "Chambéry", "deps": ["73"], "agenda": "https://agenda.catholique-savoie.fr/", "liste": {"url": "https://agenda.catholique-savoie.fr/"}},
 {"id": "chartres", "nom": "Diocèse de Chartres", "url": "https://diocesechartres.fr/", "siege": "Chartres", "deps": ["28"]},
